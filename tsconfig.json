@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@statusflow/types": ["packages/types/src"]
+    }
+  },
+  "references": [
+    { "path": "apps/backend" },
+    { "path": "apps/frontend" },
+    { "path": "packages/types" }
+  ],
+  "exclude": ["node_modules"]
+}

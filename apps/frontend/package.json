@@ -6,7 +6,8 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "check‑types": "tsc --noEmit --build tsconfig.json"
   },
   "dependencies": {
     "react": "^19.0.0",
