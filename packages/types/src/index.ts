@@ -1,4 +1,2 @@
-export type User = {
-  id: string;
-  email: string;
-};
+export * from './user';
+export * from './monitor';

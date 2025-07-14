@@ -1,0 +1,16 @@
+services:
+  db:
+    image: postgres:15
+    restart: always
+
+    env_file:
+      - ./apps/backend/.env
+
+    ports:
+      - "5432:5432"
+    
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
