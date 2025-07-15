@@ -7,10 +7,11 @@ import {
   Post,
   UseGuards,
   Request,
+  Req,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { AuthDto } from './dto';
-import { AuthGuard } from './guard';
+import { JwtGuard } from './guard';
 
 @Controller('auth')
 export class AuthController {
@@ -27,9 +28,9 @@ export class AuthController {
   async login(@Body() authDto: AuthDto) {
     return this.authService.login(authDto.email, authDto.password);
   }
-  @UseGuards(AuthGuard)
+  @UseGuards(JwtGuard)
   @Get('me')
-  getMe() {
-    return { message: 'Access granted' };
+  getMe(@Req() req: { user: Omit<AuthDto, 'password'> }) {
+    return req.user; // Return the user object without password
   }
 }

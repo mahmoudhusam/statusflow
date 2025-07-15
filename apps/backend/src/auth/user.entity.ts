@@ -2,6 +2,7 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  Index,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
@@ -11,6 +12,7 @@ export class User {
   @PrimaryGeneratedColumn('uuid')
   id: number;
 
+  @Index()
   @Column({ unique: true })
   email: string;
 

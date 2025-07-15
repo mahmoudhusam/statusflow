@@ -29,7 +29,9 @@ export class AuthService {
       email,
       password: hashedPassword,
     });
-    return this.userRepository.save(user);
+    const savedUser = await this.userRepository.save(user);
+    delete savedUser.password; // Remove password from user object
+    return savedUser;
   }
 
   async login(email: string, password: string): Promise<{ token: string }> {

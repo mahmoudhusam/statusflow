@@ -1,4 +1,4 @@
-import { IsEmail, IsNotEmpty, Length } from 'class-validator';
+import { IsEmail, IsNotEmpty, Length, Matches } from 'class-validator';
 
 export class AuthDto {
   @IsEmail()
@@ -7,5 +7,9 @@ export class AuthDto {
 
   @IsNotEmpty()
   @Length(6, 20)
+  @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d]{6,20}$/, {
+    message:
+      'Password must be 6-20 characters long, include at least one uppercase letter, one lowercase letter, and one number.',
+  })
   password: string;
 }
