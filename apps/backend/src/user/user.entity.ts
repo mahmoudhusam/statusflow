@@ -1,8 +1,10 @@
+import { Monitor } from '../monitor/monitor.entity';
 import {
   Column,
   CreateDateColumn,
   Entity,
   Index,
+  OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
@@ -10,7 +12,7 @@ import {
 @Entity()
 export class User {
   @PrimaryGeneratedColumn('uuid')
-  id: number;
+  id: string;
 
   @Index()
   @Column({ unique: true })
@@ -24,4 +26,7 @@ export class User {
 
   @UpdateDateColumn()
   updatedAt: Date;
+
+  @OneToMany(() => Monitor, (monitor) => monitor.user)
+  monitors: Monitor[];
 }

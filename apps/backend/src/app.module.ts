@@ -4,6 +4,9 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from './auth/auth.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { MonitorModule } from './monitor/monitor.module';
+import { UserModule } from './user/user.module';
+import { CheckResultModule } from './check-result/check-result.module';
 
 @Module({
   imports: [
@@ -24,11 +27,17 @@ import { AppService } from './app.service';
         password: config.get<string>('POSTGRES_PASSWORD'),
         database: config.get<string>('POSTGRES_DB'),
         entities: [__dirname + '/**/*.entity{.ts,.js}'],
-        synchronize: true, // keep off in prod!
+        synchronize: false, // Keep this as false for migrations
+        migrations: [__dirname + '/migrations/*{.ts,.js}'],
+        migrationsRun: false,
+        logging: ['query', 'error'], // Enable query and error logging
       }),
     }),
 
     AuthModule,
+    MonitorModule,
+    UserModule,
+    CheckResultModule,
   ],
   controllers: [AppController],
   providers: [AppService],

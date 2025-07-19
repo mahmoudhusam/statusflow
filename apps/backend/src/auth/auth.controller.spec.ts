@@ -3,7 +3,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { AuthDto } from './dto';
-import { User } from './user.entity';
+import { User } from '../user/user.entity';
 import { JwtService } from '@nestjs/jwt'; // Import JwtService
 
 // A simple mock for AuthService

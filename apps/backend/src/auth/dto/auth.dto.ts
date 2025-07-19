@@ -6,8 +6,8 @@ export class AuthDto {
   email: string;
 
   @IsNotEmpty()
-  @Length(6, 20)
-  @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d]{6,20}$/, {
+  @Length(8, 20)
+  @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d]{8,20}$/, {
     message:
       'Password must be 6-20 characters long, include at least one uppercase letter, one lowercase letter, and one number.',
   })
