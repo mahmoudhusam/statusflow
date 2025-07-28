@@ -24,11 +24,15 @@ export class CheckResult {
   @Column()
   isUp: boolean;
 
+  @Index()
   @CreateDateColumn({ type: 'timestamptz' })
   createdAt: Date;
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', length: 500, nullable: true })
   errorMessage?: string;
+
+  @Column({ type: 'jsonb', nullable: true })
+  responseHeaders?: Record<string, string>;
 
   @ManyToOne(() => Monitor, (monitor) => monitor.checkResults)
   @JoinColumn({ name: 'monitorId' })

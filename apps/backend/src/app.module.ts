@@ -7,6 +7,7 @@ import { AppService } from './app.service';
 import { MonitorModule } from './monitor/monitor.module';
 import { UserModule } from './user/user.module';
 import { CheckResultModule } from './check-result/check-result.module';
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { CheckResultModule } from './check-result/check-result.module';
       envFilePath: '.env',
     }),
 
+    ScheduleModule.forRoot(),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],

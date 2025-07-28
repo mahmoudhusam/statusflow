@@ -34,6 +34,21 @@ export class Monitor {
   @Column('int', { default: 3 })
   maxConsecutiveFailures: number;
 
+  @Column({ type: 'timestamptz', nullable: true })
+  lastCheckedAt: Date;
+
+  @Column({ default: 'GET' })
+  httpMethod: string;
+
+  @Column({ type: 'int', default: 10000 })
+  timeout: number;
+
+  @Column({ type: 'jsonb', nullable: true })
+  headers?: Record<string, string>;
+
+  @Column({ type: 'text', nullable: true })
+  body?: string;
+
   @CreateDateColumn()
   createdAt: Date;
 
