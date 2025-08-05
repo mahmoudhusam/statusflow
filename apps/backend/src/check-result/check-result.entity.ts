@@ -34,7 +34,9 @@ export class CheckResult {
   @Column({ type: 'jsonb', nullable: true })
   responseHeaders?: Record<string, string>;
 
-  @ManyToOne(() => Monitor, (monitor) => monitor.checkResults)
+  @ManyToOne(() => Monitor, (monitor) => monitor.checkResults, {
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'monitorId' })
   monitor: Monitor;
 

@@ -1,4 +1,3 @@
-// src/auth/auth.service.spec.ts
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthService } from './auth.service';
 import { Repository } from 'typeorm';
@@ -29,9 +28,6 @@ describe('AuthService', () => {
   let userRepository: MockRepository<User>;
   let jwtService: jest.Mocked<JwtService>;
 
-  // FIX: Corrected the mock factory for JwtService.
-  // The original implementation had a complex and incorrect type assertion.
-  // This is a simple factory function that returns the mock object, which is the correct pattern for `useFactory`.
   const mockJwtService = () => ({
     signAsync: jest.fn(),
   });
@@ -42,7 +38,6 @@ describe('AuthService', () => {
       providers: [
         AuthService,
         { provide: getRepositoryToken(User), useFactory: mockUserRepository },
-        // Use the corrected factory for JwtService.
         { provide: JwtService, useFactory: mockJwtService },
       ],
     }).compile();
@@ -60,16 +55,21 @@ describe('AuthService', () => {
     it('should create and return a new user if email is unique', async () => {
       userRepository.findOne.mockResolvedValue(null);
       (bcrypt.hash as jest.Mock).mockResolvedValue(hashedPassword);
-      // The `create` method in TypeORM typically returns a non-saved entity instance.
+
       const userToSave = { email: testEmail, password: hashedPassword };
       userRepository.create.mockReturnValue(userToSave);
-      // The `save` method persists the entity and returns it, often with DB-generated fields like id and timestamps.
-      userRepository.save.mockResolvedValue({
-        id: 1,
-        ...userToSave,
+
+      // Fixed: Use string UUID and include monitors array
+      const savedUser = {
+        id: 'user-uuid-123',
+        email: testEmail,
+        password: hashedPassword,
         createdAt: new Date(),
         updatedAt: new Date(),
-      } as User);
+        monitors: [], // Add empty monitors array
+      };
+
+      userRepository.save.mockResolvedValue(savedUser);
 
       const result = await service.signup(testEmail, testPassword);
 
@@ -83,10 +83,20 @@ describe('AuthService', () => {
       });
       expect(userRepository.save).toHaveBeenCalledWith(userToSave);
       expect(result).toEqual(expect.objectContaining({ email: testEmail }));
+      expect(result.password).toBeUndefined(); // Password should be removed
     });
 
     it('should throw ConflictException if user already exists', async () => {
-      userRepository.findOne.mockResolvedValue({ email: testEmail } as User);
+      const existingUser = {
+        id: 'user-uuid-123',
+        email: testEmail,
+        password: hashedPassword,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        monitors: [],
+      };
+
+      userRepository.findOne.mockResolvedValue(existingUser);
 
       await expect(service.signup(testEmail, testPassword)).rejects.toThrow(
         ConflictException,
@@ -107,13 +117,17 @@ describe('AuthService', () => {
     const testEmail = 'test@example.com';
     const testPassword = 'password123';
     const hashedPassword = 'hashedPassword';
+
+    // Fixed: Use string UUID and include monitors array
     const mockUser = {
-      id: 1,
+      id: 'user-uuid-123',
       email: testEmail,
       password: hashedPassword,
       createdAt: new Date(),
       updatedAt: new Date(),
-    } as User;
+      monitors: [], // Add empty monitors array
+    };
+
     const mockToken = 'mockJwtToken';
 
     it('should return a token if credentials are valid', async () => {
@@ -127,7 +141,7 @@ describe('AuthService', () => {
         where: { email: testEmail },
       });
       expect(bcrypt.compare).toHaveBeenCalledWith(testPassword, hashedPassword);
-      expect(jwtService['signAsync']).toHaveBeenCalledWith({
+      expect(jwtService.signAsync).toHaveBeenCalledWith({
         userId: mockUser.id,
         email: mockUser.email,
       });
@@ -148,7 +162,7 @@ describe('AuthService', () => {
         where: { email: testEmail },
       });
       expect(bcrypt.compare).not.toHaveBeenCalled();
-      expect(jwtService['signAsync']).not.toHaveBeenCalled();
+      expect(jwtService.signAsync).not.toHaveBeenCalled();
     });
 
     it('should throw UnauthorizedException if password is invalid', async () => {
@@ -166,7 +180,7 @@ describe('AuthService', () => {
         where: { email: testEmail },
       });
       expect(bcrypt.compare).toHaveBeenCalledWith(testPassword, hashedPassword);
-      expect(jwtService['signAsync']).not.toHaveBeenCalled();
+      expect(jwtService.signAsync).not.toHaveBeenCalled();
     });
   });
 });

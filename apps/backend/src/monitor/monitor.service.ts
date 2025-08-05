@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Monitor } from './monitor.entity';
 import { LessThan, Repository } from 'typeorm';
@@ -6,6 +6,7 @@ import { CheckResult } from '../check-result/check-result.entity';
 import { HttpService } from '@nestjs/axios';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { AxiosError } from 'axios';
+import { User } from '../user/user.entity';
 
 @Injectable()
 export class MonitorService {
@@ -179,17 +180,34 @@ export class MonitorService {
   }
 
   //Additional helper methods for the API
+
   async createMonitor(
+    name: string,
+    interval: number,
+    url: string,
     userId: string,
-    data: Partial<Monitor>,
+    additionalData?: Partial<Monitor>,
   ): Promise<Monitor> {
-    const monitor = this.monitorRepository.create({
-      ...data,
-      user: { id: userId },
-    });
+    const monitorData: Partial<Monitor> = {
+      name,
+      url,
+      interval,
+      httpMethod: 'GET',
+      timeout: 10000,
+      maxLatencyMs: 2000,
+      maxConsecutiveFailures: 3,
+      paused: false,
+      headers: {},
+      body: null,
+      ...additionalData, // Allow overriding defaults
+      user: { id: userId } as User, // Set the user relationship
+    };
+
+    const monitor = this.monitorRepository.create(monitorData);
     return this.monitorRepository.save(monitor);
   }
 
+  //List all monitors for current user
   async getMonitorsByUser(userId: string): Promise<Monitor[]> {
     return this.monitorRepository.find({
       where: { user: { id: userId } },
@@ -197,17 +215,114 @@ export class MonitorService {
     });
   }
 
+  //Get monitor details + latest status
+  async getMonitorById(monitorId: string, userId: string): Promise<Monitor> {
+    const monitor = await this.monitorRepository.findOne({
+      where: { id: monitorId, user: { id: userId } },
+    });
+
+    if (!monitor) {
+      throw new NotFoundException('Monitor not found');
+    }
+
+    return monitor;
+  }
+
+  //method to get latest check result for a monitor
+  async getLatestCheckResult(monitorId: string): Promise<CheckResult | null> {
+    return this.checkResultRepository.findOne({
+      where: { monitorId },
+      order: { createdAt: 'DESC' },
+    });
+  }
+
+  //PATCH /monitors/:id: Update monitor configuration
+  async updateMonitor(
+    monitorId: string,
+    userId: string,
+    updateData: Partial<Monitor>,
+  ): Promise<Monitor> {
+    const monitor = await this.monitorRepository.findOne({
+      where: { id: monitorId, user: { id: userId } },
+    });
+
+    if (!monitor) {
+      throw new NotFoundException('Monitor not found');
+    }
+
+    //remove fields that should not be updated
+    const { id, user, checkResults, createdAt, updatedAt, ...safeUpdateData } =
+      updateData;
+
+    //update only the allowed fields
+    Object.assign(monitor, safeUpdateData);
+    return this.monitorRepository.save(monitor);
+  }
+
+  //DELETE /monitors/:id: Delete monitor and stop checks
+  async deleteMonitor(monitorId: string, userId: string): Promise<void> {
+    const monitor = await this.monitorRepository.delete({
+      id: monitorId,
+      user: { id: userId },
+    });
+
+    if (monitor.affected === 0) {
+      throw new NotFoundException('Monitor not found');
+    }
+  }
+
   async pauseMonitor(monitorId: string, userId: string): Promise<void> {
-    await this.monitorRepository.update(
+    const result = await this.monitorRepository.update(
       { id: monitorId, user: { id: userId } },
       { paused: true },
     );
+
+    if (result.affected === 0) {
+      throw new NotFoundException('Monitor not found');
+    }
   }
 
   async resumeMonitor(monitorId: string, userId: string): Promise<void> {
-    await this.monitorRepository.update(
+    const result = await this.monitorRepository.update(
       { id: monitorId, user: { id: userId } },
       { paused: false },
     );
+
+    if (result.affected === 0) {
+      throw new NotFoundException('Monitor not found');
+    }
+  }
+
+  //method to get monitor statistics
+  async getMonitorStats(monitorId: string, userId: string) {
+    const monitor = await this.getMonitorById(monitorId, userId);
+
+    const last24Hours = new Date();
+    last24Hours.setHours(last24Hours.getHours() - 24);
+
+    const results = await this.checkResultRepository.find({
+      where: {
+        monitorId: monitor.id,
+        createdAt: LessThan(new Date()),
+      },
+      order: { createdAt: 'DESC' },
+      take: 100,
+    });
+
+    const upCount = results.filter((r) => r.isUp).length;
+    const totalCount = results.length;
+    const avgResponseTime =
+      results.reduce((sum, r) => sum + r.responseTime, 0) / totalCount || 0;
+
+    return {
+      monitorId: monitor.id,
+      name: monitor.name,
+      url: monitor.url,
+      uptime: totalCount > 0 ? (upCount / totalCount) * 100 : 0,
+      avgResponseTime: Math.round(avgResponseTime),
+      totalChecks: totalCount,
+      lastCheck: results[0]?.createdAt || null,
+      currentStatus: results[0]?.isUp ? 'up' : 'down',
+    };
   }
 }

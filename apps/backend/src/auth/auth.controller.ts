@@ -6,12 +6,12 @@ import {
   HttpStatus,
   Post,
   UseGuards,
-  Request,
-  Req,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { AuthDto } from './dto';
 import { JwtGuard } from './guard';
+import { GetUser } from './decorators';
+import { User } from '../user/user.entity';
 
 @Controller('auth')
 export class AuthController {
@@ -30,7 +30,7 @@ export class AuthController {
   }
   @UseGuards(JwtGuard)
   @Get('me')
-  getMe(@Req() req: { user: Omit<AuthDto, 'password'> }) {
-    return req.user; // Return the user object without password
+  getMe(@GetUser() user: User) {
+    return user; // Return the user object without password
   }
 }
