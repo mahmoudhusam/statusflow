@@ -1,12 +1,13 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Monitor } from './monitor.entity';
-import { LessThan, Repository } from 'typeorm';
+import { Between, LessThan, Repository } from 'typeorm';
 import { CheckResult } from '../check-result/check-result.entity';
 import { HttpService } from '@nestjs/axios';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { AxiosError } from 'axios';
 import { User } from '../user/user.entity';
+import { interval } from 'rxjs';
 
 @Injectable()
 export class MonitorService {
@@ -324,5 +325,143 @@ export class MonitorService {
       lastCheck: results[0]?.createdAt || null,
       currentStatus: results[0]?.isUp ? 'up' : 'down',
     };
+  }
+
+  //get historical metrics for a monitor
+  async getMonitorMetrics(
+    monitorId: string,
+    userId: string,
+    options: {
+      from?: Date;
+      to?: Date;
+      interval?: string;
+    },
+  ) {
+    //verfiy monitor ownership
+    const monitor = await this.getMonitorById(monitorId, userId);
+
+    //Get check results within the specified date range
+    const checkResults = await this.checkResultRepository.find({
+      where: {
+        monitorId,
+        createdAt: Between(options.from, options.to),
+      },
+      order: { createdAt: 'ASC' },
+    });
+
+    //Group by time intervals
+    const intervalMs = this.parseInterval(options.interval);
+    const groupedResults = this.groupResultsByInterval(
+      checkResults,
+      intervalMs,
+      options.from,
+      options.to,
+    );
+
+    // Calculate metrics for each interval
+    const metrics = groupedResults.map((group) => ({
+      timestamp: group.timestamp,
+      uptime:
+        group.results.length > 0
+          ? (group.results.filter((r) => r.isUp).length /
+              group.results.length) *
+            100
+          : null,
+      avgResponseTime:
+        group.results.length > 0
+          ? group.results.reduce((sum, r) => sum + r.responseTime, 0) /
+            group.results.length
+          : null,
+      p95ResponseTime: this.calculatePercentile(
+        group.results.map((r) => r.responseTime),
+        95,
+      ),
+      totalChecks: group.results.length,
+      errors: group.results.filter((r) => !r.isUp).length,
+    }));
+
+    return {
+      monitorId,
+      name: monitor.name,
+      url: monitor.url,
+      TimeRange: {
+        from: options.from,
+        to: options.to,
+        interval: options.interval,
+      },
+      summary: {
+        totalUptime:
+          checkResults.length > 0
+            ? (checkResults.filter((r) => r.isUp).length /
+                checkResults.length) *
+              100
+            : 0,
+        avgResponseTime:
+          checkResults.length > 0
+            ? checkResults.reduce((sum, r) => sum + r.responseTime, 0) /
+              checkResults.length
+            : 0,
+        totalChecks: checkResults.length,
+        totalErrors: checkResults.filter((r) => !r.isUp).length,
+      },
+      metrics,
+    };
+  }
+
+  private parseInterval(interval: string): number {
+    const intervals = {
+      '1m': 60 * 1000,
+      '5m': 5 * 60 * 1000,
+      '15m': 15 * 60 * 1000,
+      '1h': 60 * 60 * 1000,
+      '6h': 6 * 60 * 60 * 1000,
+      '1d': 24 * 60 * 60 * 1000,
+    };
+    return intervals[interval] || intervals['1h']; // Default to 1 hour
+  }
+
+  private groupResultsByInterval(
+    results: CheckResult[],
+    intervalMs: number,
+    from?: Date,
+    to?: Date,
+  ): Array<{ timestamp: Date; results: CheckResult[] }> {
+    const groups: { [key: string]: CheckResult[] } = {};
+
+    //Create time buckets
+    for (let time = from.getTime(); time < to.getTime(); time += intervalMs) {
+      const bucket = new Date(time).toISOString();
+      groups[bucket] = [];
+    }
+
+    //Assign results to buckets
+    results.forEach((result) => {
+      const resultTime = result.createdAt.getTime();
+      const bucketTime =
+        Math.floor((resultTime - from.getTime()) / intervalMs) * intervalMs +
+        from.getTime();
+      const bucketKey = new Date(bucketTime).toISOString();
+
+      if (groups[bucketKey]) {
+        groups[bucketKey].push(result);
+      }
+    });
+
+    //Convert to array format
+    return Object.entries(groups).map(([timestamp, results]) => ({
+      timestamp: new Date(timestamp),
+      results,
+    }));
+  }
+
+  private calculatePercentile(
+    values: number[],
+    percentile: number,
+  ): number | null {
+    if (values.length === 0) return null;
+
+    const sorted = values.sort((a, b) => a - b);
+    const index = Math.ceil((percentile / 100) * sorted.length) - 1;
+    return sorted[index];
   }
 }

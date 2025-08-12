@@ -8,6 +8,8 @@ import { MonitorModule } from './monitor/monitor.module';
 import { UserModule } from './user/user.module';
 import { CheckResultModule } from './check-result/check-result.module';
 import { ScheduleModule } from '@nestjs/schedule';
+import { AlertService } from './alert/alert.service';
+import { AlertModule } from './alert/alert.module';
 
 @Module({
   imports: [
@@ -40,8 +42,9 @@ import { ScheduleModule } from '@nestjs/schedule';
     MonitorModule,
     UserModule,
     CheckResultModule,
+    AlertModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, AlertService],
 })
 export class AppModule {}

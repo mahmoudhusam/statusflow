@@ -10,6 +10,7 @@ import {
   NotFoundException,
   HttpCode,
   HttpStatus,
+  Query,
 } from '@nestjs/common';
 import { JwtGuard } from '../auth/guard';
 import { MonitorService } from './monitor.service';
@@ -131,5 +132,32 @@ export class MonitorController {
       throw new NotFoundException('Monitor not found or access denied');
     }
     return stats;
+  }
+
+  //Historical Data API Endpoint
+  @Get(':id/metrics')
+  async getMonitorMetrics(
+    @GetUser('id') userId: string,
+    @Param('id') monitorId: string,
+    @Query('from') from: string,
+    @Query('to') to: string,
+    @Query('interval') interval?: string,
+  ) {
+    const metrics = await this.monitorService.getMonitorMetrics(
+      monitorId,
+      userId,
+      {
+        from: from
+          ? new Date(from)
+          : new Date(Date.now() - 24 * 60 * 60 * 1000), // Default to last 24 hours
+        to: to ? new Date(to) : new Date(),
+        interval: interval || '1h', // Default to 1 hour interval
+      },
+    );
+
+    if (!metrics) {
+      throw new NotFoundException('Monitor not found or access denied');
+    }
+    return metrics;
   }
 }
