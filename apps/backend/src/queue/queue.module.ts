@@ -3,6 +3,11 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MonitorQueueService } from './monitor-queue.service';
 import { MonitorProcessor } from './monitor.processor';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { Monitor } from '../monitor/monitor.entity';
+import { CheckResult } from '../check-result/check-result.entity';
+import { HttpModule } from '@nestjs/axios';
+import { AlertModule } from 'src/alert/alert.module';
 
 @Module({
   imports: [
@@ -30,6 +35,12 @@ import { MonitorProcessor } from './monitor.processor';
     BullModule.registerQueue({
       name: 'monitor-checks',
     }),
+    TypeOrmModule.forFeature([Monitor, CheckResult]),
+    HttpModule.register({
+      timeout: 5000,
+      maxRedirects: 5,
+    }),
+    AlertModule,
   ],
   providers: [MonitorQueueService, MonitorProcessor],
   exports: [MonitorQueueService],
