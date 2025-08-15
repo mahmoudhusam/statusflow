@@ -10,10 +10,10 @@ import { CheckResultModule } from './check-result/check-result.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { AlertService } from './alert/alert.service';
 import { AlertModule } from './alert/alert.module';
+import { QueueModule } from './queue/queue.module';
 
 @Module({
   imports: [
-    // 1. Load .env and make ConfigService available app‑wide
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: '.env',
@@ -43,6 +43,7 @@ import { AlertModule } from './alert/alert.module';
     UserModule,
     CheckResultModule,
     AlertModule,
+    QueueModule,
   ],
   controllers: [AppController],
   providers: [AppService, AlertService],
