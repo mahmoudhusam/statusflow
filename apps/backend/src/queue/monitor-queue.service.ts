@@ -46,12 +46,11 @@ export class MonitorQueueService {
   async removeMonitorCheck(monitorId: string): Promise<void> {
     const jobId = `monitor-${monitorId}`;
 
-    //Remove repeated job if it exists
-    const repeatedJobs = await this.monitorQueue.getRepeatableJobs();
-    const jobToRemove = repeatedJobs.find((job) => job.id === jobId);
+    const schedulers = await this.monitorQueue.getJobSchedulers();
+    const scheduler = schedulers.find((s) => s.id === jobId);
 
-    if (jobToRemove) {
-      await this.monitorQueue.removeRepeatableByKey(jobToRemove.key);
+    if (scheduler) {
+      await this.monitorQueue.removeJobScheduler(scheduler.id);
       this.logger.log(`Removed monitor check for job ID: ${jobId}`);
     }
   }

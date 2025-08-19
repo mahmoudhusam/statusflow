@@ -5,6 +5,7 @@ import { MonitorService } from './monitor.service';
 import { Monitor } from './monitor.entity';
 import { CheckResult } from '../check-result/check-result.entity';
 import { NotFoundException } from '@nestjs/common';
+import { MonitorQueueService } from '../queue/monitor-queue.service';
 
 describe('MonitorService', () => {
   let service: MonitorService;
@@ -56,6 +57,7 @@ describe('MonitorService', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
+        MonitorQueueService,
         MonitorService,
         {
           provide: getRepositoryToken(Monitor),
