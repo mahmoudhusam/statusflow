@@ -74,6 +74,20 @@ describe('MonitorProcessor', () => {
     maxLatencyMs: 2000,
     maxConsecutiveFailures: 3,
   };
+  const jobWithHeaders = {
+    data: {
+      headers: {
+        Authorization: 'Bearer token',
+        'User-Agent': 'test-agent',
+      },
+      monitorId: 'monitor-123',
+      url: 'https://example.com',
+      httpMethod: 'GET',
+      timeout: 10000,
+      maxLatencyMs: 2000,
+      maxConsecutiveFailures: 3,
+    },
+  };
 
   beforeEach(async () => {
     jest.clearAllMocks();
@@ -145,7 +159,10 @@ describe('MonitorProcessor', () => {
         method: 'GET',
         url: 'https://example.com',
         timeout: 10000,
-        headers: {},
+        headers: {
+          Authorization: 'Bearer token',
+          'User-Agent': 'test-agent',
+        },
         data: undefined,
         validateStatus: expect.any(Function),
       });
@@ -463,7 +480,9 @@ describe('MonitorProcessor', () => {
       mockCheckResultRepository.save.mockResolvedValue({});
       mockMonitorRepository.update.mockResolvedValue({});
 
-      await processor.process(jobWithHeaders as Job<MonitorCheckJobData>);
+      await processor.process(
+        jobWithHeaders as unknown as Job<MonitorCheckJobData>,
+      );
 
       expect(mockHttpService.axiosRef).toHaveBeenCalledWith(
         expect.objectContaining({

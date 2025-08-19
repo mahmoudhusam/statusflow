@@ -4,16 +4,16 @@ import { AlertService } from './alert.service';
 import { Monitor } from '../monitor/monitor.entity';
 import { CheckResult } from '../check-result/check-result.entity';
 import * as nodemailer from 'nodemailer';
+import 'jest-extended';
 
 // Mock nodemailer
 jest.mock('nodemailer');
 const mockNodemailer = nodemailer as jest.Mocked<typeof nodemailer>;
 
-// Create src/alert/alert.service.spec.ts
 describe('AlertService', () => {
   let service: AlertService;
   let configService: ConfigService;
-  const mockTransporter = { sendMail: jest.fn() };
+  let mockTransporter: any;
 
   const mockConfigService = {
     get: jest.fn(),
@@ -45,6 +45,8 @@ describe('AlertService', () => {
     checkResults: [],
   };
 
+  let mockCheckResult: CheckResult;
+
   beforeEach(async () => {
     jest.clearAllMocks();
 
@@ -56,7 +58,7 @@ describe('AlertService', () => {
 
     // Setup config service mock
     mockConfigService.get.mockImplementation((key: string) => {
-      const config = {
+      const config: Record<string, string> = {
         SMTP_HOST: 'smtp.gmail.com',
         SMTP_PORT: '587',
         SMTP_SECURE: 'false',
@@ -79,6 +81,18 @@ describe('AlertService', () => {
 
     service = module.get<AlertService>(AlertService);
     configService = module.get<ConfigService>(ConfigService);
+
+    mockCheckResult = {
+      id: 'result-123',
+      status: 500,
+      responseTime: 1500,
+      isUp: false,
+      createdAt: new Date(),
+      errorMessage: 'Server Error',
+      responseHeaders: {},
+      monitor: mockMonitor,
+      monitorId: 'monitor-123',
+    };
   });
 
   describe('initialization', () => {
@@ -96,26 +110,89 @@ describe('AlertService', () => {
   });
 
   describe('checkAndSendAlerts', () => {
-    let mockCheckResult: CheckResult;
-
-    beforeEach(() => {
-      mockCheckResult = {
-        id: 'result-123',
-        status: 500,
-        responseTime: 1500,
-        isUp: false,
-        createdAt: new Date(),
-        errorMessage: 'Server Error',
-        responseHeaders: {},
-        monitor: mockMonitor,
-        monitorId: 'monitor-123',
-      };
-    });
-
     it('should send downtime alert when consecutive failures threshold is reached', async () => {
       mockTransporter.sendMail.mockResolvedValue({ messageId: 'msg-123' });
 
       await service.checkAndSendAlerts(mockMonitor, mockCheckResult, 3);
+
+      expect(mockTransporter.sendMail).toHaveBeenCalledWith({
+        from: 'StatusFlow <noreply@statusflow.com>',
+        to: 'user@example.com',
+        subject: '🚨 StatusFlow Alert: Test Monitor',
+        html: expect.stringContaining(
+          'DOWNTIME: Test Monitor has been down for 3 consecutive checks',
+        ),
+      });
+    });
+
+    it('should send latency alert when response time exceeds threshold', async () => {
+      const slowCheckResult = {
+        ...mockCheckResult,
+        isUp: true,
+        status: 200,
+        responseTime: 3000, // Exceeds 2000ms threshold
+        errorMessage: undefined,
+      };
+
+      mockTransporter.sendMail.mockResolvedValue({ messageId: 'msg-124' });
+
+      await service.checkAndSendAlerts(mockMonitor, slowCheckResult, 0);
+
+      expect(mockTransporter.sendMail).toHaveBeenCalledWith({
+        from: 'StatusFlow <noreply@statusflow.com>',
+        to: 'user@example.com',
+        subject: '🚨 StatusFlow Alert: Test Monitor',
+        html: expect.stringContaining(
+          'HIGH LATENCY: Test Monitor responded in 3000ms (threshold: 2000ms)',
+        ),
+      });
+    });
+
+    it('should send both downtime and latency alerts if both conditions are met', async () => {
+      const slowDownCheckResult = {
+        ...mockCheckResult,
+        responseTime: 5000, // Both down AND slow (though this is unusual)
+      };
+
+      mockTransporter.sendMail.mockResolvedValue({ messageId: 'msg-125' });
+
+      await service.checkAndSendAlerts(mockMonitor, slowDownCheckResult, 5);
+
+      expect(mockTransporter.sendMail).toHaveBeenCalledWith(
+        expect.objectContaining({
+          html: expect.stringMatching(/DOWNTIME.*consecutive checks/),
+        }),
+      );
+    });
+
+    it('should not send alerts when monitor is up and response time is acceptable', async () => {
+      const goodCheckResult = {
+        ...mockCheckResult,
+        isUp: true,
+        status: 200,
+        responseTime: 150, // Well under threshold
+        errorMessage: undefined,
+      };
+
+      await service.checkAndSendAlerts(mockMonitor, goodCheckResult, 0);
+
+      expect(mockTransporter.sendMail).not.toHaveBeenCalled();
+    });
+
+    it('should not send downtime alert when consecutive failures is below threshold', async () => {
+      await service.checkAndSendAlerts(mockMonitor, mockCheckResult, 2); // Below threshold of 3
+
+      expect(mockTransporter.sendMail).not.toHaveBeenCalled();
+    });
+
+    it('should handle email sending errors gracefully', async () => {
+      const emailError = new Error('SMTP server unavailable');
+      mockTransporter.sendMail.mockRejectedValue(emailError);
+
+      // Should not throw, but log error internally
+      await expect(
+        service.checkAndSendAlerts(mockMonitor, mockCheckResult, 3),
+      ).resolves.not.toThrow();
 
       expect(mockTransporter.sendMail).toHaveBeenCalled();
     });
@@ -130,26 +207,29 @@ describe('AlertService', () => {
         isUp: false,
         createdAt: new Date('2024-01-15T10:30:00Z'),
         errorMessage: 'Service Unavailable',
-        responseHeaders: { 'server': 'nginx' },
+        responseHeaders: { server: 'nginx' },
         monitor: mockMonitor,
         monitorId: 'monitor-123',
       };
 
-      mockTransporter.sendMail.mockImplementation((mailOptions) => {
+      mockTransporter.sendMail.mockImplementation((mailOptions: any) => {
         const html = mailOptions.html;
-        
+
         // Check all required sections are present
-        expect(html).toContain('<h2>StatusFlow Alert</h2>');
+        expect(html).toContain('<h1>StatusFlow Alert </h1>');
         expect(html).toContain('<strong>Monitor:</strong> Test Monitor');
         expect(html).toContain('<strong>URL:</strong> https://example.com');
-        expect(html).toContain('<strong>Time:</strong> 2024-01-15T10:30:00.000Z');
+        expect(html).toContain(
+          '<strong>Time:</strong> 2024-01-15T10:30:00.000Z',
+        );
         expect(html).toContain('<h3>Issues Detected:</h3>');
         expect(html).toContain('<h3>Latest Check Result:</h3>');
         expect(html).toContain('<strong>Status:</strong> 503');
-        expect(html).toContain('<strong>Response Time:</strong> 0ms');
+        expect(html).toContain('<li><strong>Response Time:</strong> 0ms</li>');
+
         expect(html).toContain('❌ DOWN');
         expect(html).toContain('<strong>Error:</strong> Service Unavailable');
-        
+
         return Promise.resolve({ messageId: 'msg-128' });
       });
 
@@ -176,7 +256,7 @@ describe('AlertService', () => {
         monitorId: 'monitor-123',
       };
 
-      mockTransporter.sendMail.mockImplementation((mailOptions) => {
+      mockTransporter.sendMail.mockImplementation((mailOptions: any) => {
         const html = mailOptions.html;
         expect(html).toContain('✅ UP');
         expect(html).not.toContain('<strong>Error:</strong>');
@@ -255,8 +335,10 @@ describe('AlertService', () => {
         throw new Error('SMTP configuration invalid');
       });
 
-      // Should not throw during service initialization
-      expect(() => new AlertService(configService)).toThrow('SMTP configuration invalid');
+      // Should throw during service initialization
+      expect(() => new AlertService(configService)).toThrow(
+        'SMTP configuration invalid',
+      );
     });
 
     it('should handle sendMail failures without throwing', async () => {
@@ -276,7 +358,7 @@ describe('AlertService', () => {
 
       // Should not throw error, just log it
       await expect(
-        service.checkAndSendAlerts(mockMonitor, mockCheckResult, 3)
+        service.checkAndSendAlerts(mockMonitor, mockCheckResult, 3),
       ).resolves.not.toThrow();
 
       expect(mockTransporter.sendMail).toHaveBeenCalled();
@@ -303,10 +385,17 @@ describe('AlertService', () => {
         monitorId: 'monitor-123',
       };
 
-      mockTransporter.sendMail.mockImplementation((mailOptions) => {
-        expect(mailOptions.subject).toContain('Test Monitor & API (v2.0) <critical>');
-        expect(mailOptions.html).toContain('Test Monitor &amp; API (v2.0) &lt;critical&gt;'); // Should be HTML escaped
-        expect(mailOptions.html).toContain('https://api-v2.example.com/health?check=true');
+      mockTransporter.sendMail.mockImplementation((mailOptions: any) => {
+        expect(mailOptions.subject).toContain(
+          'Test Monitor & API (v2.0) <critical>',
+        );
+        expect(mailOptions.html).toContain(
+          'Test Monitor & API (v2.0) <critical>',
+        );
+
+        expect(mailOptions.html).toContain(
+          'https://api-v2.example.com/health?check=true',
+        );
         return Promise.resolve({ messageId: 'msg-134' });
       });
 
@@ -315,7 +404,7 @@ describe('AlertService', () => {
 
     it('should handle very long error messages', async () => {
       const longErrorMessage = 'A'.repeat(1000); // Very long error
-      
+
       const mockCheckResult: CheckResult = {
         id: 'result-135',
         status: 500,
@@ -328,88 +417,12 @@ describe('AlertService', () => {
         monitorId: 'monitor-123',
       };
 
-      mockTransporter.sendMail.mockImplementation((mailOptions) => {
+      mockTransporter.sendMail.mockImplementation((mailOptions: any) => {
         expect(mailOptions.html).toContain(longErrorMessage);
         return Promise.resolve({ messageId: 'msg-135' });
       });
 
       await service.checkAndSendAlerts(mockMonitor, mockCheckResult, 3);
-
-      expect(mockTransporter.sendMail).toHaveBeenCalled();
-    });
-  });
-});toHaveBeenCalledWith({
-        from: 'StatusFlow <noreply@statusflow.com>',
-        to: 'user@example.com',
-        subject: '🚨 StatusFlow Alert: Test Monitor',
-        html: expect.stringContaining('DOWNTIME: Test Monitor has been down for 3 consecutive checks'),
-      });
-    });
-
-    it('should send latency alert when response time exceeds threshold', async () => {
-      const slowCheckResult = {
-        ...mockCheckResult,
-        isUp: true,
-        status: 200,
-        responseTime: 3000, // Exceeds 2000ms threshold
-        errorMessage: undefined,
-      };
-
-      mockTransporter.sendMail.mockResolvedValue({ messageId: 'msg-124' });
-
-      await service.checkAndSendAlerts(mockMonitor, slowCheckResult, 0);
-
-      expect(mockTransporter.sendMail).toHaveBeenCalledWith({
-        from: 'StatusFlow <noreply@statusflow.com>',
-        to: 'user@example.com',
-        subject: '🚨 StatusFlow Alert: Test Monitor',
-        html: expect.stringContaining('HIGH LATENCY: Test Monitor responded in 3000ms (threshold: 2000ms)'),
-      });
-    });
-
-    it('should send both downtime and latency alerts if both conditions are met', async () => {
-      const slowDownCheckResult = {
-        ...mockCheckResult,
-        responseTime: 5000, // Both down AND slow (though this is unusual)
-      };
-
-      mockTransporter.sendMail.mockResolvedValue({ messageId: 'msg-125' });
-
-      await service.checkAndSendAlerts(mockMonitor, slowDownCheckResult, 5);
-
-      expect(mockTransporter.sendMail).toHaveBeenCalledWith(
-        expect.objectContaining({
-          html: expect.stringMatching(/DOWNTIME.*consecutive checks/),
-        })
-      );
-    });
-
-    it('should not send alerts when monitor is up and response time is acceptable', async () => {
-      const goodCheckResult = {
-        ...mockCheckResult,
-        isUp: true,
-        status: 200,
-        responseTime: 150, // Well under threshold
-        errorMessage: undefined,
-      };
-
-      await service.checkAndSendAlerts(mockMonitor, goodCheckResult, 0);
-
-      expect(mockTransporter.sendMail).not.toHaveBeenCalled();
-    });
-
-    it('should not send downtime alert when consecutive failures is below threshold', async () => {
-      await service.checkAndSendAlerts(mockMonitor, mockCheckResult, 2); // Below threshold of 3
-
-      expect(mockTransporter.sendMail).not.toHaveBeenCalled();
-    });
-
-    it('should handle email sending errors gracefully', async () => {
-      const emailError = new Error('SMTP server unavailable');
-      mockTransporter.sendMail.mockRejectedValue(emailError);
-
-      // Should not throw, but log error internally
-      await expect(service.checkAndSendAlerts(mockMonitor, mockCheckResult, 3)).resolves.not.toThrow();
 
       expect(mockTransporter.sendMail).toHaveBeenCalled();
     });
@@ -429,18 +442,20 @@ describe('AlertService', () => {
         monitorId: 'monitor-123',
       };
 
-      mockTransporter.sendMail.mockImplementation((mailOptions) => {
+      mockTransporter.sendMail.mockImplementation((mailOptions: any) => {
         // Verify the HTML content structure
         expect(mailOptions.html).toContain('StatusFlow Alert');
         expect(mailOptions.html).toContain('Test Monitor');
+
         expect(mailOptions.html).toContain('https://example.com');
         expect(mailOptions.html).toContain('2024-01-01T12:00:00.000Z');
-        expect(mailOptions.html).toContain('Status: 500');
-        expect(mailOptions.html).toContain('Response Time: 1500ms');
+        expect(mailOptions.html).toContain('<strong>Status:</strong> 500');
+        expect(mailOptions.html).toContain(
+          '<li><strong>Response Time:</strong> 1500ms</li>',
+        );
         expect(mailOptions.html).toContain('❌ DOWN');
         expect(mailOptions.html).toContain('Internal Server Error');
-        expect(mailOptions.html).toContain('automated message from StatusFlow');
-        
+        expect(mailOptions.html).toContain('automated alert from StatusFlow');
         return Promise.resolve({ messageId: 'msg-123' });
       });
 
@@ -462,7 +477,7 @@ describe('AlertService', () => {
         monitorId: 'monitor-123',
       };
 
-      mockTransporter.sendMail.mockImplementation((mailOptions) => {
+      mockTransporter.sendMail.mockImplementation((mailOptions: any) => {
         // Should not contain error section when no error
         expect(mailOptions.html).not.toContain('<li><strong>Error:</strong>');
         expect(mailOptions.html).toContain('✅ UP');
@@ -492,7 +507,9 @@ describe('AlertService', () => {
       };
 
       // Should not throw even with missing config
-      await expect(newService.checkAndSendAlerts(mockMonitor, mockCheckResult, 3)).resolves.not.toThrow();
+      await expect(
+        newService.checkAndSendAlerts(mockMonitor, mockCheckResult, 3),
+      ).resolves.not.toThrow();
     });
 
     it('should handle SMTP_SECURE as string "true"', () => {
@@ -507,7 +524,7 @@ describe('AlertService', () => {
       expect(mockNodemailer.createTransport).toHaveBeenCalledWith(
         expect.objectContaining({
           secure: true,
-        })
+        }),
       );
     });
 
@@ -523,7 +540,7 @@ describe('AlertService', () => {
       expect(mockNodemailer.createTransport).toHaveBeenCalledWith(
         expect.objectContaining({
           secure: false,
-        })
+        }),
       );
     });
   });
@@ -542,8 +559,10 @@ describe('AlertService', () => {
         monitorId: 'monitor-123',
       };
 
-      mockTransporter.sendMail.mockImplementation((mailOptions) => {
-        expect(mailOptions.html).toContain('🔴 DOWNTIME: Test Monitor has been down for 5 consecutive checks');
+      mockTransporter.sendMail.mockImplementation((mailOptions: any) => {
+        expect(mailOptions.html).toContain(
+          '🔴 DOWNTIME: Test Monitor has been down for 5 consecutive checks',
+        );
         return Promise.resolve({ messageId: 'msg-126' });
       });
 
@@ -565,11 +584,23 @@ describe('AlertService', () => {
         monitorId: 'monitor-123',
       };
 
-      mockTransporter.sendMail.mockImplementation((mailOptions) => {
-        expect(mailOptions.html).toContain('⚠️ HIGH LATENCY: Test Monitor responded in 4500ms (threshold: 2000ms)');
+      mockTransporter.sendMail.mockImplementation((mailOptions: any) => {
+        expect(mailOptions.html).toContain(
+          '⚠️ HIGH LATENCY: Test Monitor responded in 4500ms (threshold: 2000ms)',
+        );
         return Promise.resolve({ messageId: 'msg-127' });
       });
 
       await service.checkAndSendAlerts(mockMonitor, mockCheckResult, 0);
 
-      expect(mockTransporter.sendMail).
+      expect(mockTransporter.sendMail).toHaveBeenCalledWith({
+        from: 'StatusFlow <noreply@statusflow.com>',
+        to: 'user@example.com',
+        subject: '🚨 StatusFlow Alert: Test Monitor',
+        html: expect.stringContaining(
+          'HIGH LATENCY: Test Monitor responded in 4500ms (threshold: 2000ms)',
+        ),
+      });
+    });
+  });
+});
