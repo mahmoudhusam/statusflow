@@ -1,4 +1,9 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Monitor } from './monitor.entity';
 import { Between, Repository } from 'typeorm';
@@ -179,17 +184,22 @@ export class MonitorService {
     const upCount = results.filter((r) => r.isUp).length;
     const totalCount = results.length;
     const avgResponseTime =
-      results.reduce((sum, r) => sum + r.responseTime, 0) / totalCount || 0;
+      totalCount > 0
+        ? Math.round(
+            results.reduce((sum, r) => sum + r.responseTime, 0) / totalCount,
+          )
+        : 0;
 
     return {
       monitorId: monitor.id,
       name: monitor.name,
       url: monitor.url,
       uptime: totalCount > 0 ? (upCount / totalCount) * 100 : 0,
-      avgResponseTime: Math.round(avgResponseTime),
+      avgResponseTime,
       totalChecks: totalCount,
       lastCheck: results[0]?.createdAt || null,
-      currentStatus: results[0]?.isUp ? 'up' : 'down',
+      currentStatus:
+        results.length > 0 ? (results[0].isUp ? 'up' : 'down') : 'unknown',
     };
   }
 
@@ -217,6 +227,9 @@ export class MonitorService {
 
     // Group by time intervals
     const intervalMs = this.parseInterval(options.interval);
+    if (!intervalMs || intervalMs <= 0) {
+      throw new BadRequestException('Invalid interval');
+    }
     const groupedResults = this.groupResultsByInterval(
       checkResults,
       intervalMs,
@@ -324,8 +337,14 @@ export class MonitorService {
   ): number | null {
     if (values.length === 0) return null;
 
-    const sorted = values.sort((a, b) => a - b);
-    const index = Math.ceil((percentile / 100) * sorted.length) - 1;
+    const sorted = [...values].sort((a, b) => a - b);
+    const index = Math.max(
+      0,
+      Math.min(
+        sorted.length - 1,
+        Math.ceil((percentile / 100) * sorted.length) - 1,
+      ),
+    );
     return sorted[index];
   }
 

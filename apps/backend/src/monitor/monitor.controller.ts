@@ -11,6 +11,7 @@ import {
   HttpCode,
   HttpStatus,
   Query,
+  BadRequestException,
 } from '@nestjs/common';
 import { JwtGuard } from '../auth/guard';
 import { MonitorService } from './monitor.service';
@@ -43,7 +44,8 @@ export class MonitorController {
   //GET /monitors: List all monitors for current user
   @Get()
   async getAllMonitors(@GetUser('id') userId: string) {
-    return this.monitorService.getMonitorsByUser(userId);
+    const monitors = await this.monitorService.getMonitorsByUser(userId);
+    return monitors.map(mapMonitorToResponse);
   }
 
   //GET /monitors/:id: Get monitor details + latest status
@@ -53,16 +55,13 @@ export class MonitorController {
     @Param('id') monitorId: string,
   ) {
     const monitor = await this.monitorService.getMonitorById(monitorId, userId);
-    if (!monitor) {
-      throw new NotFoundException('Monitor not found or access denied');
-    }
 
     // Get latest check result
     const latestResult =
       await this.monitorService.getLatestCheckResult(monitorId);
 
     return {
-      ...monitor,
+      ...mapMonitorToResponse(monitor),
       latestStatus: latestResult || null,
     };
   }
@@ -134,16 +133,22 @@ export class MonitorController {
     @Query('to') to: string,
     @Query('interval') interval?: string,
   ) {
+    const fromDt = from
+      ? new Date(from)
+      : new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const toDt = to ? new Date(to) : new Date();
+
+    if (isNaN(fromDt.getTime()) || isNaN(toDt.getTime())) {
+      throw new BadRequestException('Invalid from/to date');
+    }
+    if (fromDt >= toDt) {
+      throw new BadRequestException('`from` must be earlier than `to`');
+    }
+
     const metrics = await this.monitorService.getMonitorMetrics(
       monitorId,
       userId,
-      {
-        from: from
-          ? new Date(from)
-          : new Date(Date.now() - 24 * 60 * 60 * 1000), // Default to last 24 hours
-        to: to ? new Date(to) : new Date(),
-        interval: interval || '1h', // Default to 1 hour interval
-      },
+      { from: fromDt, to: toDt, interval: interval || '1h' },
     );
 
     if (!metrics) {
