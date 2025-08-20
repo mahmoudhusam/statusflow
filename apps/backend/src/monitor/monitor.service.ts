@@ -331,6 +331,6 @@ export class MonitorService {
 
   // Add method to get queue statistics
   // async getQueueStats() {
-  //   return this.monitorQueueService.getQueueStats();
+  //   return await this.monitorQueueService.getQueueStats();
   // }
 }

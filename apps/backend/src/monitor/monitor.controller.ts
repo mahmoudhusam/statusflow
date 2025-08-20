@@ -30,13 +30,14 @@ export class MonitorController {
     @Body() createMonitorDto: CreateMonitorDto,
     @GetUser() user: User,
   ) {
-    return this.monitorService.createMonitor(
+    const saved = await this.monitorService.createMonitor(
       createMonitorDto.name,
       createMonitorDto.interval,
       createMonitorDto.url,
       user.id,
       createMonitorDto as Partial<Monitor>,
     );
+    return mapMonitorToResponse(saved);
   }
 
   //GET /monitors: List all monitors for current user
@@ -73,18 +74,13 @@ export class MonitorController {
     @Param('id') monitorId: string,
     @Body() updateData: UpdateMonitorDto,
   ) {
-    try {
-      return await this.monitorService.updateMonitor(
-        monitorId,
-        userId,
-        updateData,
-      );
-    } catch (error) {
-      if (error.message === 'Monitor not found or access denied') {
-        throw new NotFoundException('Monitor not found or access denied');
-      }
-      throw error;
-    }
+    // Let the service throw NotFoundException which Nest will convert to 404
+    const updated = await this.monitorService.updateMonitor(
+      monitorId,
+      userId,
+      updateData,
+    );
+    return mapMonitorToResponse(updated);
   }
 
   //DELETE /monitors/:id: Delete monitor and stop checks
@@ -94,14 +90,7 @@ export class MonitorController {
     @GetUser('id') userId: string,
     @Param('id') monitorId: string,
   ) {
-    try {
-      await this.monitorService.deleteMonitor(monitorId, userId);
-    } catch (error) {
-      if (error.message === 'Monitor not found or access denied') {
-        throw new NotFoundException('Monitor not found or access denied');
-      }
-      throw error;
-    }
+    await this.monitorService.deleteMonitor(monitorId, userId);
   }
 
   //Additional endpoints for pause/resume
@@ -162,4 +151,19 @@ export class MonitorController {
     }
     return metrics;
   }
+}
+function mapMonitorToResponse(m: Monitor) {
+  return {
+    id: m.id,
+    name: m.name,
+    url: m.url,
+    interval: m.interval,
+    httpMethod: m.httpMethod,
+    timeout: m.timeout,
+    maxLatencyMs: m.maxLatencyMs,
+    maxConsecutiveFailures: m.maxConsecutiveFailures,
+    paused: m.paused,
+    createdAt: m.createdAt,
+    updatedAt: m.updatedAt,
+  };
 }
