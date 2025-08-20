@@ -73,16 +73,17 @@ export class MonitorQueueService {
   }
 
   async getQueueStats(): Promise<any> {
-    const waiting = await this.monitorQueue.getWaiting();
-    const active = await this.monitorQueue.getActive();
-    const completed = await this.monitorQueue.getCompleted();
-    const failed = await this.monitorQueue.getFailed();
-
+    const counts = await this.monitorQueue.getJobCounts(
+      'waiting',
+      'active',
+      'completed',
+      'failed',
+    );
     return {
-      waiting: waiting.length,
-      active: active.length,
-      completed: completed.length,
-      failed: failed.length,
+      waiting: counts.waiting ?? 0,
+      active: counts.active ?? 0,
+      completed: counts.completed ?? 0,
+      failed: counts.failed ?? 0,
     };
   }
 }

@@ -17,6 +17,7 @@ import { MonitorService } from './monitor.service';
 import { CreateMonitorDto, UpdateMonitorDto } from './dto';
 import { User } from '../user/user.entity';
 import { GetUser } from '../auth/decorators/get-user.decorator';
+import { Monitor } from './monitor.entity';
 
 @UseGuards(JwtGuard)
 @Controller('monitors')
@@ -34,6 +35,7 @@ export class MonitorController {
       createMonitorDto.interval,
       createMonitorDto.url,
       user.id,
+      createMonitorDto as Partial<Monitor>,
     );
   }
 
