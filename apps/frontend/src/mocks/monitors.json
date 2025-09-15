@@ -1,0 +1,338 @@
+[
+  {
+    "id": "a1b2c3d4-e5f6-7890-1234-567890abcdef",
+    "name": "Production API Health",
+    "url": "https://api.yourservice.com/health",
+    "interval": 60,
+    "paused": false,
+    "maxLatencyMs": 1000,
+    "maxConsecutiveFailures": 3,
+    "lastCheckedAt": "2025-09-14T16:25:00.000Z",
+    "httpMethod": "GET",
+    "timeout": 15000,
+    "headers": {
+      "X-Api-Version": "2.0"
+    },
+    "body": null,
+    "createdAt": "2025-08-01T10:00:00.000Z",
+    "updatedAt": "2025-09-14T16:25:00.000Z",
+    "user": {
+      "id": "user-uuid-001"
+    },
+    "checkResults": []
+  },
+  {
+    "id": "b2c3d4e5-f6a7-8901-2345-67890abcdef1",
+    "name": "Staging - User Login",
+    "url": "https://staging.api.yourservice.com/auth/login",
+    "interval": 300,
+    "paused": false,
+    "maxLatencyMs": 2500,
+    "maxConsecutiveFailures": 2,
+    "lastCheckedAt": "2025-09-14T16:22:00.000Z",
+    "httpMethod": "POST",
+    "timeout": 20000,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "body": "{\"username\":\"test@example.com\",\"password\":\"fakepassword\"}",
+    "createdAt": "2025-08-15T11:30:00.000Z",
+    "updatedAt": "2025-09-14T16:22:00.000Z",
+    "user": {
+      "id": "user-uuid-001"
+    },
+    "checkResults": []
+  },
+  {
+    "id": "c3d4e5f6-a7b8-9012-3456-7890abcdef12",
+    "name": "Marketing Website Homepage",
+    "url": "https://www.yourservice.com",
+    "interval": 900,
+    "paused": false,
+    "maxLatencyMs": 500,
+    "maxConsecutiveFailures": 5,
+    "lastCheckedAt": "2025-09-14T16:15:00.000Z",
+    "httpMethod": "GET",
+    "timeout": 10000,
+    "headers": null,
+    "body": null,
+    "createdAt": "2025-08-20T09:00:00.000Z",
+    "updatedAt": "2025-09-14T16:15:00.000Z",
+    "user": {
+      "id": "user-uuid-002"
+    },
+    "checkResults": []
+  },
+  {
+    "id": "d4e5f6a7-b8c9-0123-4567-890abcdef123",
+    "name": "Legacy System (Paused)",
+    "url": "http://10.0.1.50/status",
+    "interval": 3600,
+    "paused": true,
+    "maxLatencyMs": 5000,
+    "maxConsecutiveFailures": 3,
+    "lastCheckedAt": null,
+    "httpMethod": "GET",
+    "timeout": 30000,
+    "headers": null,
+    "body": null,
+    "createdAt": "2025-07-10T14:00:00.000Z",
+    "updatedAt": "2025-09-01T18:00:00.000Z",
+    "user": {
+      "id": "user-uuid-001"
+    },
+    "checkResults": []
+  },
+  {
+    "id": "e5f6a7b8-c9d0-1234-5678-90abcdef1234",
+    "name": "Payment Gateway - PUT",
+    "url": "https://api.paymentprovider.com/v2/transaction/xyz-789",
+    "interval": 120,
+    "paused": false,
+    "maxLatencyMs": 1500,
+    "maxConsecutiveFailures": 2,
+    "lastCheckedAt": "2025-09-14T16:26:30.000Z",
+    "httpMethod": "PUT",
+    "timeout": 10000,
+    "headers": {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer sk_test_someapikey"
+    },
+    "body": "{\"status\":\"completed\"}",
+    "createdAt": "2025-09-05T12:00:00.000Z",
+    "updatedAt": "2025-09-14T16:26:30.000Z",
+    "user": {
+      "id": "user-uuid-002"
+    },
+    "checkResults": []
+  },
+  {
+    "id": "f6a7b8c9-d0e1-2345-6789-0abcdef12345",
+    "name": "Content Delivery Network",
+    "url": "https://cdn.yourservice.com/healthcheck.txt",
+    "interval": 30,
+    "paused": false,
+    "maxLatencyMs": 200,
+    "maxConsecutiveFailures": 10,
+    "lastCheckedAt": "2025-09-14T16:27:00.000Z",
+    "httpMethod": "HEAD",
+    "timeout": 5000,
+    "headers": null,
+    "body": null,
+    "createdAt": "2025-09-10T16:45:00.000Z",
+    "updatedAt": "2025-09-14T16:27:00.000Z",
+    "user": {
+      "id": "user-uuid-001"
+    },
+    "checkResults": []
+  },
+  {
+    "id": "0a1b2c3d-4e5f-6a7b-8c9d-0e1f2a3b4c5d",
+    "name": "GraphQL Endpoint - User Query",
+    "url": "https://api.yourservice.com/graphql",
+    "interval": 180,
+    "paused": false,
+    "maxLatencyMs": 1200,
+    "maxConsecutiveFailures": 3,
+    "lastCheckedAt": "2025-09-15T12:05:00.000Z",
+    "httpMethod": "POST",
+    "timeout": 15000,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "body": "{\"query\":\"{ user(id: \\\"123\\\") { id name } }\"}",
+    "createdAt": "2025-09-11T09:20:00.000Z",
+    "updatedAt": "2025-09-15T12:05:00.000Z",
+    "user": {
+      "id": "user-uuid-001"
+    },
+    "checkResults": []
+  },
+  {
+    "id": "1b2c3d4e-5f6a-7b8c-9d0e-1f2a3b4c5d6e",
+    "name": "Admin Panel - Delete User",
+    "url": "https://admin.yourservice.com/api/users/temp-user-123",
+    "interval": 600,
+    "paused": false,
+    "maxLatencyMs": 800,
+    "maxConsecutiveFailures": 2,
+    "lastCheckedAt": "2025-09-15T12:00:00.000Z",
+    "httpMethod": "DELETE",
+    "timeout": 10000,
+    "headers": {
+      "Authorization": "Bearer admin_token_abcdef"
+    },
+    "body": null,
+    "createdAt": "2025-09-12T15:00:00.000Z",
+    "updatedAt": "2025-09-15T12:00:00.000Z",
+    "user": {
+      "id": "user-uuid-002"
+    },
+    "checkResults": []
+  },
+  {
+    "id": "2c3d4e5f-6a7b-8c9d-0e1f-2a3b4c5d6e7f",
+    "name": "Third-party Integration - Weather API",
+    "url": "https://api.weatherprovider.com/v1/current?city=london",
+    "interval": 1800,
+    "paused": false,
+    "maxLatencyMs": 2000,
+    "maxConsecutiveFailures": 5,
+    "lastCheckedAt": "2025-09-15T11:45:00.000Z",
+    "httpMethod": "GET",
+    "timeout": 20000,
+    "headers": null,
+    "body": null,
+    "createdAt": "2025-09-01T00:00:00.000Z",
+    "updatedAt": "2025-09-15T11:45:00.000Z",
+    "user": {
+      "id": "user-uuid-001"
+    },
+    "checkResults": []
+  },
+  {
+    "id": "3d4e5f6a-7b8c-9d0e-1f2a-3b4c5d6e7f8g",
+    "name": "Database Service (Maintenance)",
+    "url": "http://192.168.1.100:5432/health",
+    "interval": 300,
+    "paused": true,
+    "maxLatencyMs": 300,
+    "maxConsecutiveFailures": 3,
+    "lastCheckedAt": "2025-09-13T10:00:00.000Z",
+    "httpMethod": "GET",
+    "timeout": 5000,
+    "headers": null,
+    "body": null,
+    "createdAt": "2025-08-05T18:30:00.000Z",
+    "updatedAt": "2025-09-13T10:00:00.000Z",
+    "user": {
+      "id": "user-uuid-002"
+    },
+    "checkResults": []
+  },
+  {
+    "id": "4e5f6a7b-8c9d-0e1f-2a3b-4c5d6e7f8g9h",
+    "name": "Blog RSS Feed",
+    "url": "https://www.yourservice.com/blog/feed.xml",
+    "interval": 7200,
+    "paused": false,
+    "maxLatencyMs": 600,
+    "maxConsecutiveFailures": 4,
+    "lastCheckedAt": "2025-09-15T10:30:00.000Z",
+    "httpMethod": "GET",
+    "timeout": 8000,
+    "headers": null,
+    "body": null,
+    "createdAt": "2025-08-22T13:10:00.000Z",
+    "updatedAt": "2025-09-15T10:30:00.000Z",
+    "user": {
+      "id": "user-uuid-001"
+    },
+    "checkResults": []
+  },
+  {
+    "id": "5f6a7b8c-9d0e-1f2a-3b4c-5d6e7f8g9h0i",
+    "name": "User Profile - PATCH",
+    "url": "https://api.yourservice.com/users/user-uuid-001",
+    "interval": 300,
+    "paused": false,
+    "maxLatencyMs": 900,
+    "maxConsecutiveFailures": 2,
+    "lastCheckedAt": "2025-09-15T12:07:00.000Z",
+    "httpMethod": "PATCH",
+    "timeout": 12000,
+    "headers": {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer some_user_token_abc"
+    },
+    "body": "{\"displayName\":\"Test User Updated\"}",
+    "createdAt": "2025-09-08T11:00:00.000Z",
+    "updatedAt": "2025-09-15T12:07:00.000Z",
+    "user": {
+      "id": "user-uuid-001"
+    },
+    "checkResults": []
+  },
+  {
+    "id": "6a7b8c9d-0e1f-2a3b-4c5d-6e7f8g9h0i1j",
+    "name": "Public Image Download",
+    "url": "https://cdn.yourservice.com/assets/logo.png",
+    "interval": 900,
+    "paused": false,
+    "maxLatencyMs": 400,
+    "maxConsecutiveFailures": 5,
+    "lastCheckedAt": "2025-09-15T11:55:00.000Z",
+    "httpMethod": "GET",
+    "timeout": 10000,
+    "headers": null,
+    "body": null,
+    "createdAt": "2025-09-13T17:00:00.000Z",
+    "updatedAt": "2025-09-15T11:55:00.000Z",
+    "user": {
+      "id": "user-uuid-002"
+    },
+    "checkResults": []
+  },
+  {
+    "id": "7b8c9d0e-1f2a-3b4c-5d6e-7f8g9h0i1j2k",
+    "name": "Analytics Beacon",
+    "url": "https://analytics.yourservice.com/track",
+    "interval": 60,
+    "paused": false,
+    "maxLatencyMs": 150,
+    "maxConsecutiveFailures": 10,
+    "lastCheckedAt": "2025-09-15T12:08:00.000Z",
+    "httpMethod": "POST",
+    "timeout": 3000,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "body": "{\"event\":\"page_view\",\"url\":\"/pricing\"}",
+    "createdAt": "2025-09-14T00:00:00.000Z",
+    "updatedAt": "2025-09-15T12:08:00.000Z",
+    "user": {
+      "id": "user-uuid-001"
+    },
+    "checkResults": []
+  },
+  {
+    "id": "8c9d0e1f-2a3b-4c5d-6e7f-8g9h0i1j2k3l",
+    "name": "Customer Support Chat WebSocket",
+    "url": "wss://chat.yourservice.com",
+    "interval": 120,
+    "paused": false,
+    "maxLatencyMs": 500,
+    "maxConsecutiveFailures": 3,
+    "lastCheckedAt": "2025-09-15T12:06:00.000Z",
+    "httpMethod": "GET",
+    "timeout": 10000,
+    "headers": null,
+    "body": null,
+    "createdAt": "2025-08-30T10:10:10.000Z",
+    "updatedAt": "2025-09-15T12:06:00.000Z",
+    "user": {
+      "id": "user-uuid-002"
+    },
+    "checkResults": []
+  },
+  {
+    "id": "9d0e1f2a-3b4c-5d6e-7f8g-9h0i1j2k3l4m",
+    "name": "Video Processing Worker",
+    "url": "http://10.0.5.12:8080/jobs/status",
+    "interval": 60,
+    "paused": false,
+    "maxLatencyMs": 1000,
+    "maxConsecutiveFailures": 2,
+    "lastCheckedAt": "2025-09-15T12:07:30.000Z",
+    "httpMethod": "GET",
+    "timeout": 15000,
+    "headers": null,
+    "body": null,
+    "createdAt": "2025-09-15T00:00:00.000Z",
+    "updatedAt": "2025-09-15T12:07:30.000Z",
+    "user": {
+      "id": "user-uuid-001"
+    },
+    "checkResults": []
+  }
+]
