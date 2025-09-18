@@ -1,18 +1,6 @@
 import Link from 'next/link';
 import { formatRelative } from 'date-fns/formatRelative';
-
-export type Monitor = {
-  id: string;
-  name: string;
-  url: string;
-  lastCheckedAt?: string | null;
-  lastStatus?: 'UP' | 'DOWN';
-  lastStatusCode?: number;
-  lastResponseTimeMs?: number;
-  paused?: boolean;
-  httpMethod?: string;
-  user?: { id: string };
-};
+import type { Monitor } from '@/types/monitor';
 
 interface MonitorCardProps {
   monitor: Monitor;
@@ -75,7 +63,6 @@ export function MonitorCard({ monitor }: MonitorCardProps) {
               {monitor.lastStatusCode}
             </div>
           )}
-
         </div>
       </div>
     </Link>

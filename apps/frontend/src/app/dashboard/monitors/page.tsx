@@ -1,6 +1,7 @@
 import Link from 'next/link';
-import monitors from '../../../mocks/monitors.json';
-import { MonitorCard, Monitor } from '../../../components/monitors/MonitorCard';
+import monitors from '@/mocks/monitors.json';
+import { MonitorCard } from '@/components/monitors/MonitorCard';
+import type { Monitor } from '@/types/monitor';
 
 export default function MonitorsPage() {
   const currentUserId = 'user-uuid-001';
