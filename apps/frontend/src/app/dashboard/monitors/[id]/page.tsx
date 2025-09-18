@@ -4,9 +4,9 @@ import type { Monitor } from '@/types/monitor';
 import { formatRelative } from 'date-fns/formatRelative';
 
 interface MonitorPageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 function getMonitorById(id: string): Monitor | null {
@@ -18,8 +18,8 @@ function getMonitorById(id: string): Monitor | null {
   }
 }
 
-export default function MonitorPage({ params }: MonitorPageProps) {
-  const { id } = params;
+export default async function MonitorPage({ params }: MonitorPageProps) {
+  const { id } = await params;
 
   const monitor = getMonitorById(id);
 
