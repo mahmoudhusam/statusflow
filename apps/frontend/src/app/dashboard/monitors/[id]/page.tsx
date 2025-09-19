@@ -347,7 +347,7 @@ export default function MonitorPage({ params }: MonitorPageProps) {
               {checkResults
                 .slice(-10)
                 .reverse()
-                .map((result, index) => (
+                .map((result) => (
                   <tr
                     key={result.id}
                     className="hover:bg-gray-50 dark:hover:bg-gray-700"
