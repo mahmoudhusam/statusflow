@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, use } from 'react';
 import { notFound } from 'next/navigation';
 import monitors from '@/mocks/monitors.json';
 import type {
@@ -13,9 +13,9 @@ import { formatRelative } from 'date-fns/formatRelative';
 import Link from 'next/link';
 
 interface MonitorPageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 // Helper function to generate mock check results for demonstration
@@ -106,7 +106,8 @@ function calculateStats(checkResults: CheckResult[]): MonitorStats {
 }
 
 export default function MonitorPage({ params }: MonitorPageProps) {
-  const { id } = params;
+  // Use React's `use` hook to unwrap the Promise
+  const { id } = use(params);
   const [selectedTimeRange, setSelectedTimeRange] = useState<TimeRange>('24h');
 
   // Find the monitor
