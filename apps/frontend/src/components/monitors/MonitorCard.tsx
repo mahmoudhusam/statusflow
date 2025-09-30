@@ -6,6 +6,12 @@ interface MonitorCardProps {
   monitor: Monitor;
 }
 
+
+interface MonitorCardProps {
+  monitor: Monitor;
+  onRefresh?: (monitorId: string) => Promise<void>;
+}
+
 export function MonitorCard({ monitor }: MonitorCardProps) {
   const lastChecked = monitor.lastCheckedAt
     ? formatRelative(new Date(monitor.lastCheckedAt), new Date())
