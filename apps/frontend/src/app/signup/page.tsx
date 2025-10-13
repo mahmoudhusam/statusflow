@@ -1,60 +1,67 @@
-// apps/frontend/src/app/signup/page.tsx
 'use client';
 
-import { useState, FormEvent } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { signupSchema, type SignupFormData } from '@/lib/validations/auth';
+import { z } from 'zod';
 
 export default function SignupPage() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [error, setError] = useState('');
+  const [formData, setFormData] = useState<SignupFormData>({
+    email: '',
+    password: '',
+    confirmPassword: '',
+  });
+  const [errors, setErrors] = useState<
+    Partial<Record<keyof SignupFormData, string>>
+  >({});
+  const [serverError, setServerError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { signup } = useAuth();
 
-  const validatePassword = (pwd: string): string | null => {
-    if (pwd.length < 8 || pwd.length > 20) {
-      return 'Password must be between 8 and 20 characters';
-    }
-    if (!/(?=.*[a-z])/.test(pwd)) {
-      return 'Password must contain at least one lowercase letter';
-    }
-    if (!/(?=.*[A-Z])/.test(pwd)) {
-      return 'Password must contain at least one uppercase letter';
-    }
-    if (!/(?=.*\d)/.test(pwd)) {
-      return 'Password must contain at least one number';
-    }
-    return null;
-  };
-
-  const handleSubmit = async (e: FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setError('');
-
-    if (password !== confirmPassword) {
-      setError('Passwords do not match');
-      return;
-    }
-
-    const passwordError = validatePassword(password);
-    if (passwordError) {
-      setError(passwordError);
-      return;
-    }
-
+    setErrors({});
+    setServerError('');
     setIsLoading(true);
 
     try {
-      await signup(email, password);
+      // Validate form data with Zod
+      const validatedData = signupSchema.parse(formData);
+
+      // Attempt signup
+      await signup(validatedData.email, validatedData.password);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Signup failed');
+      if (err instanceof z.ZodError) {
+        // Handle validation errors
+        const fieldErrors: Partial<Record<keyof SignupFormData, string>> = {};
+        err.issues.forEach((issue) => {
+          if (issue.path[0]) {
+            fieldErrors[issue.path[0] as keyof SignupFormData] = issue.message;
+          }
+        });
+        setErrors(fieldErrors);
+      } else if (err instanceof Error) {
+        // Handle authentication errors
+        setServerError(err.message);
+      } else {
+        setServerError('Signup failed. Please try again.');
+      }
     } finally {
       setIsLoading(false);
     }
   };
+
+  const handleChange =
+    (field: keyof SignupFormData) =>
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      setFormData((prev) => ({ ...prev, [field]: e.target.value }));
+      // Clear error for this field when user starts typing
+      if (errors[field]) {
+        setErrors((prev) => ({ ...prev, [field]: undefined }));
+      }
+    };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
@@ -69,9 +76,9 @@ export default function SignupPage() {
         </div>
 
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          {error && (
+          {serverError && (
             <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-200 px-4 py-3 rounded">
-              {error}
+              {serverError}
             </div>
           )}
 
@@ -88,13 +95,21 @@ export default function SignupPage() {
                 name="email"
                 type="email"
                 autoComplete="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="appearance-none relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                value={formData.email}
+                onChange={handleChange('email')}
+                className={`appearance-none relative block w-full px-3 py-2 border rounded-md placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                  errors.email
+                    ? 'border-red-500 dark:border-red-500'
+                    : 'border-gray-300 dark:border-gray-600'
+                }`}
                 placeholder="you@example.com"
                 disabled={isLoading}
               />
+              {errors.email && (
+                <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+                  {errors.email}
+                </p>
+              )}
             </div>
 
             <div>
@@ -109,16 +124,26 @@ export default function SignupPage() {
                 name="password"
                 type="password"
                 autoComplete="new-password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="appearance-none relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                value={formData.password}
+                onChange={handleChange('password')}
+                className={`appearance-none relative block w-full px-3 py-2 border rounded-md placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                  errors.password
+                    ? 'border-red-500 dark:border-red-500'
+                    : 'border-gray-300 dark:border-gray-600'
+                }`}
                 placeholder="••••••••"
                 disabled={isLoading}
               />
-              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                8-20 characters with uppercase, lowercase, and number
-              </p>
+              {errors.password && (
+                <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+                  {errors.password}
+                </p>
+              )}
+              {!errors.password && (
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                  8-20 characters with uppercase, lowercase, and number
+                </p>
+              )}
             </div>
 
             <div>
@@ -133,13 +158,21 @@ export default function SignupPage() {
                 name="confirm-password"
                 type="password"
                 autoComplete="new-password"
-                required
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                className="appearance-none relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                value={formData.confirmPassword}
+                onChange={handleChange('confirmPassword')}
+                className={`appearance-none relative block w-full px-3 py-2 border rounded-md placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                  errors.confirmPassword
+                    ? 'border-red-500 dark:border-red-500'
+                    : 'border-gray-300 dark:border-gray-600'
+                }`}
                 placeholder="••••••••"
                 disabled={isLoading}
               />
+              {errors.confirmPassword && (
+                <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+                  {errors.confirmPassword}
+                </p>
+              )}
             </div>
           </div>
 

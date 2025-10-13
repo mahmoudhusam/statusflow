@@ -1,4 +1,3 @@
-// apps/frontend/src/app/dashboard/layout.tsx
 'use client';
 
 import { useAuth } from '@/contexts/AuthContext';

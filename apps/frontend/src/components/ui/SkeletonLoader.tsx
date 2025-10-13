@@ -93,6 +93,30 @@ export function SkeletonLoader({
     }
   };
 
+  // Special handling for 'row' variant to avoid div wrapper
+  if (variant === 'row') {
+    return (
+      <>
+        {Array.from({ length: count }).map((_, index) => (
+          <tr key={index} className={className}>
+            <td className="px-6 py-4 whitespace-nowrap">
+              <div className="animate-pulse bg-gray-300 dark:bg-gray-600 h-4 w-32 rounded" />
+            </td>
+            <td className="px-6 py-4 whitespace-nowrap">
+              <div className="animate-pulse bg-gray-300 dark:bg-gray-600 h-6 w-12 rounded-full" />
+            </td>
+            <td className="px-6 py-4 whitespace-nowrap">
+              <div className="animate-pulse bg-gray-300 dark:bg-gray-600 h-4 w-16 rounded" />
+            </td>
+            <td className="px-6 py-4 whitespace-nowrap">
+              <div className="animate-pulse bg-gray-300 dark:bg-gray-600 h-4 w-12 rounded" />
+            </td>
+          </tr>
+        ))}
+      </>
+    );
+  }
+
   return (
     <>
       {Array.from({ length: count }).map((_, index) => (
