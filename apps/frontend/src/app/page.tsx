@@ -866,7 +866,7 @@ export default function LandingPage() {
           <div className="border-t border-gray-800 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
             <div className="flex items-center gap-3">
               <Image
-                src="/logo.svg"
+                src="/logo-white.svg"
                 alt="StatusFlow Logo"
                 width={140}
                 height={32}
