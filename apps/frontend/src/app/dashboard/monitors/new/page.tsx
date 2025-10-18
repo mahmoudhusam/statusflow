@@ -110,33 +110,33 @@ export default function CreateMonitorPage() {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto px-4 py-8 bg-gray-50 min-h-screen">
       <div className="mb-6">
         <Link
           href="/dashboard/monitors"
-          className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+          className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 font-medium transition-colors mb-6"
         >
           ← Back to Monitors
         </Link>
       </div>
 
       <div className="max-w-3xl">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">
           Create New Monitor
         </h1>
-        <p className="text-gray-600 dark:text-gray-400 mb-8">
+        <p className="text-gray-600 mb-8">
           Set up monitoring for your service or API endpoint
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-8">
           {error && (
-            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-200 px-4 py-3 rounded">
+            <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg flex items-start gap-3">
               {error}
             </div>
           )}
 
-          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">
+          <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">
               Basic Information
             </h2>
 
@@ -144,7 +144,7 @@ export default function CreateMonitorPage() {
               <div>
                 <label
                   htmlFor="name"
-                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                  className="block text-sm font-medium text-gray-700 mb-2"
                 >
                   Monitor Name *
                 </label>
@@ -155,7 +155,7 @@ export default function CreateMonitorPage() {
                   required
                   value={formData.name}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
                   placeholder="Production API"
                   disabled={isLoading}
                 />
@@ -164,7 +164,7 @@ export default function CreateMonitorPage() {
               <div>
                 <label
                   htmlFor="url"
-                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                  className="block text-sm font-medium text-gray-700 mb-2"
                 >
                   URL *
                 </label>
@@ -175,7 +175,7 @@ export default function CreateMonitorPage() {
                   required
                   value={formData.url}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-900 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors font-mono text-sm"
                   placeholder="https://api.example.com/health"
                   disabled={isLoading}
                 />
@@ -185,7 +185,7 @@ export default function CreateMonitorPage() {
                 <div>
                   <label
                     htmlFor="httpMethod"
-                    className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                    className="block text-sm font-medium text-gray-700 mb-2"
                   >
                     HTTP Method
                   </label>
@@ -194,7 +194,7 @@ export default function CreateMonitorPage() {
                     name="httpMethod"
                     value={formData.httpMethod}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
                     disabled={isLoading}
                   >
                     <option value="GET">GET</option>
@@ -210,7 +210,7 @@ export default function CreateMonitorPage() {
                 <div>
                   <label
                     htmlFor="interval"
-                    className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                    className="block text-sm font-medium text-gray-700 mb-2"
                   >
                     Check Interval (seconds) *
                   </label>
@@ -223,7 +223,7 @@ export default function CreateMonitorPage() {
                     max="3600"
                     value={formData.interval}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
                     disabled={isLoading}
                   />
                 </div>
@@ -231,8 +231,8 @@ export default function CreateMonitorPage() {
             </div>
           </div>
 
-          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">
+          <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">
               Alert Configuration
             </h2>
 
@@ -240,7 +240,7 @@ export default function CreateMonitorPage() {
               <div>
                 <label
                   htmlFor="timeout"
-                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                  className="block text-sm font-medium text-gray-700 mb-2"
                 >
                   Timeout (ms)
                 </label>
@@ -252,7 +252,7 @@ export default function CreateMonitorPage() {
                   max="30000"
                   value={formData.timeout}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
                   disabled={isLoading}
                 />
               </div>
@@ -260,7 +260,7 @@ export default function CreateMonitorPage() {
               <div>
                 <label
                   htmlFor="maxLatencyMs"
-                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                  className="block text-sm font-medium text-gray-700 mb-2"
                 >
                   Max Latency (ms)
                 </label>
@@ -272,7 +272,7 @@ export default function CreateMonitorPage() {
                   max="10000"
                   value={formData.maxLatencyMs}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
                   disabled={isLoading}
                 />
               </div>
@@ -280,7 +280,7 @@ export default function CreateMonitorPage() {
               <div>
                 <label
                   htmlFor="maxConsecutiveFailures"
-                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                  className="block text-sm font-medium text-gray-700 mb-2"
                 >
                   Max Failures
                 </label>
@@ -292,28 +292,28 @@ export default function CreateMonitorPage() {
                   max="10"
                   value={formData.maxConsecutiveFailures}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
                   disabled={isLoading}
                 />
               </div>
             </div>
           </div>
 
-          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">
+          <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">
               Advanced Options
             </h2>
 
             <div className="space-y-4">
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <label className="block text-sm font-medium text-gray-700">
                     Custom Headers
                   </label>
                   <button
                     type="button"
                     onClick={addHeader}
-                    className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+                    className="text-sm text-blue-600 hover:text-blue-700"
                     disabled={isLoading}
                   >
                     + Add Header
@@ -331,7 +331,7 @@ export default function CreateMonitorPage() {
                           onChange={(e) =>
                             updateHeader(index, 'key', e.target.value)
                           }
-                          className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm"
+                          className="flex-1 px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm"
                           disabled={isLoading}
                         />
                         <input
@@ -341,13 +341,13 @@ export default function CreateMonitorPage() {
                           onChange={(e) =>
                             updateHeader(index, 'value', e.target.value)
                           }
-                          className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm"
+                          className="flex-1 px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm"
                           disabled={isLoading}
                         />
                         <button
                           type="button"
                           onClick={() => removeHeader(index)}
-                          className="px-3 py-2 text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+                          className="px-3 py-2 text-red-600 hover:text-red-700"
                           disabled={isLoading}
                         >
                           <svg
@@ -370,7 +370,7 @@ export default function CreateMonitorPage() {
                 )}
 
                 {customHeaders.length === 0 && (
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                  <p className="text-sm text-gray-500">
                     No custom headers added
                   </p>
                 )}
@@ -382,7 +382,7 @@ export default function CreateMonitorPage() {
                 <div>
                   <label
                     htmlFor="body"
-                    className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                    className="block text-sm font-medium text-gray-700 mb-2"
                   >
                     Request Body
                   </label>
@@ -392,11 +392,11 @@ export default function CreateMonitorPage() {
                     rows={6}
                     value={formData.body}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-900 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors font-mono text-sm"
                     placeholder='{"key": "value"}'
                     disabled={isLoading}
                   />
-                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                  <p className="mt-2 text-xs text-gray-500">
                     JSON or plain text request body
                   </p>
                 </div>
@@ -407,14 +407,14 @@ export default function CreateMonitorPage() {
           <div className="flex justify-end gap-4">
             <Link
               href="/dashboard/monitors"
-              className="px-6 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+              className="px-6 py-2.5 border border-gray-300 rounded-lg text-gray-700 bg-white hover:bg-gray-50 hover:border-gray-400 transition-all font-medium"
             >
               Cancel
             </Link>
             <button
               type="submit"
               disabled={isLoading}
-              className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all font-medium shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40"
             >
               {isLoading ? (
                 <span className="flex items-center gap-2">
