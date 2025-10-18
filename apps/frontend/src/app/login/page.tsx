@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { loginSchema, type LoginFormData } from '@/lib/validations/auth';
 import { z } from 'zod';
+import Image from 'next/image';
 
 export default function LoginPage() {
   const [formData, setFormData] = useState<LoginFormData>({
@@ -64,24 +65,13 @@ export default function LoginPage() {
           {/* Logo */}
           <div className="text-center">
             <Link href="/" className="inline-flex items-center gap-3 mb-8">
-              <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center shadow-lg">
-                <svg
-                  className="w-7 h-7 text-white"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
-              </div>
-              <span className="text-2xl font-bold text-gray-900">
-                StatusFlow
-              </span>
+              <Image
+                src="/logo.svg"
+                alt="StatusFlow Logo"
+                width={180}
+                height={48}
+                priority
+              />
             </Link>
 
             <h2 className="text-3xl font-bold text-gray-900 mb-2">
