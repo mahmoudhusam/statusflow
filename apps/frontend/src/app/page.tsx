@@ -1,33 +1,20 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import Image from 'next/image';
+import Link from 'next/link';
 
 export default function LandingPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { isAuthenticated, loading } = useAuth();
-  const router = useRouter();
+  const { isAuthenticated, loading, user } = useAuth();
 
-  // Redirect authenticated users to dashboard
-  useEffect(() => {
-    if (!loading && isAuthenticated) {
-      router.push('/dashboard/monitors');
-    }
-  }, [isAuthenticated, loading, router]);
-
-  // Show landing page for non-authenticated users
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="animate-spin rounded-full h-12 w-12 border-3 border-blue-500 border-t-transparent" />
       </div>
     );
-  }
-
-  if (isAuthenticated) {
-    return null;
   }
 
   return (
@@ -65,18 +52,47 @@ export default function LandingPage() {
               >
                 Docs
               </a>
-              <a
-                href="/login"
-                className="text-gray-600 hover:text-gray-900 transition-colors"
-              >
-                Sign In
-              </a>
-              <a
-                href="/signup"
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                Get Started
-              </a>
+
+              {/* Show different buttons based on authentication status */}
+              {isAuthenticated ? (
+                <>
+                  <span className="text-sm text-gray-600">{user?.email}</span>
+                  <Link
+                    href="/dashboard/monitors"
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors inline-flex items-center gap-2"
+                  >
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                      />
+                    </svg>
+                    Go to Dashboard
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <a
+                    href="/login"
+                    className="text-gray-600 hover:text-gray-900 transition-colors"
+                  >
+                    Sign In
+                  </a>
+                  <a
+                    href="/signup"
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    Get Started
+                  </a>
+                </>
+              )}
             </div>
 
             <button
@@ -130,18 +146,35 @@ export default function LandingPage() {
               >
                 Docs
               </a>
-              <a
-                href="/login"
-                className="block text-gray-600 hover:text-gray-900"
-              >
-                Sign In
-              </a>
-              <a
-                href="/signup"
-                className="block px-4 py-2 bg-blue-600 text-white rounded-lg text-center"
-              >
-                Get Started
-              </a>
+
+              {isAuthenticated ? (
+                <>
+                  <div className="text-sm text-gray-600 py-2">
+                    {user?.email}
+                  </div>
+                  <Link
+                    href="/dashboard/monitors"
+                    className="block px-4 py-2 bg-blue-600 text-white rounded-lg text-center"
+                  >
+                    Go to Dashboard
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <a
+                    href="/login"
+                    className="block text-gray-600 hover:text-gray-900"
+                  >
+                    Sign In
+                  </a>
+                  <a
+                    href="/signup"
+                    className="block px-4 py-2 bg-blue-600 text-white rounded-lg text-center"
+                  >
+                    Get Started
+                  </a>
+                </>
+              )}
             </div>
           </div>
         )}
@@ -151,10 +184,30 @@ export default function LandingPage() {
       <section className="pt-32 pb-20 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           <div className="text-center max-w-3xl mx-auto">
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 rounded-full text-sm text-blue-700 font-medium mb-6">
-              <span className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></span>
-              Real-time monitoring for your services
-            </div>
+            {/* Show a welcome back message for authenticated users */}
+            {isAuthenticated && (
+              <div className="inline-flex items-center gap-2 px-4 py-2 bg-green-50 rounded-full text-sm text-green-700 font-medium mb-6">
+                <svg
+                  className="w-4 h-4"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+                Welcome back, {user?.email}!
+              </div>
+            )}
+
+            {!isAuthenticated && (
+              <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 rounded-full text-sm text-blue-700 font-medium mb-6">
+                <span className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></span>
+                Real-time monitoring for your services
+              </div>
+            )}
 
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-900 mb-6 leading-tight">
               Never Miss a Beat.
@@ -169,18 +222,50 @@ export default function LandingPage() {
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <a
-                href="/signup"
-                className="px-8 py-4 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors shadow-lg shadow-blue-500/30"
-              >
-                Start Monitoring Free
-              </a>
-              <a
-                href="#features"
-                className="px-8 py-4 bg-gray-100 text-gray-900 rounded-lg font-semibold hover:bg-gray-200 transition-colors"
-              >
-                See How It Works
-              </a>
+              {isAuthenticated ? (
+                <>
+                  <Link
+                    href="/dashboard/monitors"
+                    className="px-8 py-4 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors shadow-lg shadow-blue-500/30 inline-flex items-center justify-center gap-2"
+                  >
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                      />
+                    </svg>
+                    Open Dashboard
+                  </Link>
+                  <a
+                    href="#features"
+                    className="px-8 py-4 bg-gray-100 text-gray-900 rounded-lg font-semibold hover:bg-gray-200 transition-colors"
+                  >
+                    Learn More
+                  </a>
+                </>
+              ) : (
+                <>
+                  <a
+                    href="/signup"
+                    className="px-8 py-4 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors shadow-lg shadow-blue-500/30"
+                  >
+                    Start Monitoring Free
+                  </a>
+                  <a
+                    href="#features"
+                    className="px-8 py-4 bg-gray-100 text-gray-900 rounded-lg font-semibold hover:bg-gray-200 transition-colors"
+                  >
+                    See How It Works
+                  </a>
+                </>
+              )}
             </div>
 
             <div className="mt-8 flex items-center justify-center gap-8 text-sm text-gray-500">

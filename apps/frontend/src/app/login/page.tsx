@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
@@ -18,7 +18,18 @@ export default function LoginPage() {
   >({});
   const [serverError, setServerError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [redirectTo, setRedirectTo] = useState<string | null>(null);
   const { login } = useAuth();
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const from = params.get('from');
+      if (from) {
+        setRedirectTo(from);
+      }
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -28,7 +39,11 @@ export default function LoginPage() {
 
     try {
       const validatedData = loginSchema.parse(formData);
-      await login(validatedData.email, validatedData.password);
+      await login(
+        validatedData.email,
+        validatedData.password,
+        redirectTo || undefined
+      );
     } catch (err) {
       if (err instanceof z.ZodError) {
         const fieldErrors: Partial<Record<keyof LoginFormData, string>> = {};

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 
 interface UseAsyncDataOptions {
   simulateDelay?: number;
@@ -33,6 +33,9 @@ export function useAsyncData<T>(
   const [attemptCount, setAttemptCount] = useState(0);
   const [retryTrigger, setRetryTrigger] = useState(0);
 
+  const fetchFnRef = useRef(fetchFn);
+  fetchFnRef.current = fetchFn;
+
   const fetchData = useCallback(async () => {
     try {
       setLoading(true);
@@ -52,7 +55,7 @@ export function useAsyncData<T>(
         throw new Error('Simulated network error for testing');
       }
 
-      const result = await fetchFn();
+      const result = await fetchFnRef.current();
       setData(result);
       setAttemptCount(0);
     } catch (err) {
@@ -72,17 +75,11 @@ export function useAsyncData<T>(
     } finally {
       setLoading(false);
     }
-  }, [
-    fetchFn,
-    attemptCount,
-    retryCount,
-    retryDelay,
-    simulateDelay,
-    simulateErrorRate,
-  ]);
+  }, [attemptCount, retryCount, retryDelay, simulateDelay, simulateErrorRate]);
 
   useEffect(() => {
     fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [...deps, retryTrigger]);
 
   const retry = useCallback(() => {
@@ -98,7 +95,6 @@ export function useAsyncData<T>(
   return { data, loading, error, retry, refresh };
 }
 
-// Helper function to simulate API delays
 export async function simulateApiCall<T>(
   data: T,
   options: { delay?: number; shouldFail?: boolean } = {}
