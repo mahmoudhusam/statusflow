@@ -432,12 +432,12 @@ export function MonitorDetailsComponent({
   };
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto px-4 py-8 bg-gray-50">
       {/* Breadcrumb */}
       <div className="mb-4">
         <Link
           href="/dashboard/monitors"
-          className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+          className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 font-medium transition-colors mb-6"
         >
           ← Back to Monitors
         </Link>
@@ -447,23 +447,23 @@ export function MonitorDetailsComponent({
       <div className="mb-8">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">
               {monitor.name}
               {monitor.paused && (
-                <span className="ml-3 text-sm px-3 py-1 rounded-full bg-gray-200 text-gray-700 dark:bg-gray-600 dark:text-gray-300">
+                <span className="ml-3 text-sm px-3 py-1 rounded-full bg-gray-200 text-gray-700 ">
                   Paused
                 </span>
               )}
             </h1>
             <div className="flex items-center gap-4">
-              <span className="text-gray-600 dark:text-gray-300 font-mono">
+              <span className="text-gray-600  font-mono">
                 {monitor.url}
               </span>
               <span
-                className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold ${
+                className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-semibold ${
                   isUp
-                    ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                    : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+                    ? 'bg-green-50 text-green-700 ring-1 ring-green-600/20'
+                    : 'bg-red-50 text-red-700 ring-1 ring-red-600/20'
                 }`}
               >
                 {isUp ? '🟢 UP' : '🔴 DOWN'}
@@ -472,7 +472,7 @@ export function MonitorDetailsComponent({
           </div>
           <button
             onClick={handleRefresh}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 hover:border-gray-300 transition-all text-gray-700 font-medium shadow-sm"
             disabled={isLoadingMetrics}
           >
             <svg
@@ -493,39 +493,39 @@ export function MonitorDetailsComponent({
         </div>
 
         {/* Monitor Metadata */}
-        <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
+        <div className="bg-white border border-gray-200 p-6 rounded-xl shadow-sm">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
             <div>
-              <span className="font-medium text-gray-500 dark:text-gray-400">
+              <span className="font-medium text-gray-500 ">
                 Created:
               </span>
-              <div className="text-gray-900 dark:text-gray-100">
+              <div className="text-gray-900 ">
                 {monitor.createdAt
                   ? new Date(monitor.createdAt).toLocaleDateString()
                   : 'Unknown'}
               </div>
             </div>
             <div>
-              <span className="font-medium text-gray-500 dark:text-gray-400">
+              <span className="font-medium text-gray-500 ">
                 Method:
               </span>
-              <div className="text-gray-900 dark:text-gray-100 font-mono">
+              <div className="text-gray-900  font-mono">
                 {monitor.httpMethod || 'GET'}
               </div>
             </div>
             <div>
-              <span className="font-medium text-gray-500 dark:text-gray-400">
+              <span className="font-medium text-gray-500 ">
                 Interval:
               </span>
-              <div className="text-gray-900 dark:text-gray-100">
+              <div className="text-gray-900 ">
                 {monitor.interval ? `${monitor.interval}s` : 'Default'}
               </div>
             </div>
             <div>
-              <span className="font-medium text-gray-500 dark:text-gray-400">
+              <span className="font-medium text-gray-500 ">
                 Last Check:
               </span>
-              <div className="text-gray-900 dark:text-gray-100">
+              <div className="text-gray-900 ">
                 {lastChecked}
               </div>
             </div>
@@ -537,26 +537,26 @@ export function MonitorDetailsComponent({
       <div className="mb-8">
         <div className="flex flex-col sm:flex-row sm:items-center gap-4">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+            <span className="text-sm font-medium text-gray-700 ">
               Time Range:
             </span>
             {stats && (
-              <span className="text-xs text-gray-500 dark:text-gray-400">
+              <span className="text-xs text-gray-500 ">
                 ({stats.totalChecks} total checks)
               </span>
             )}
           </div>
 
           {/* Button Group for Time Range Selection */}
-          <div className="flex rounded-lg bg-gray-100 dark:bg-gray-800 p-1">
+          <div className="inline-flex rounded-lg bg-gray-100 p-1 shadow-inner">
             {timeRangeOptions.map((option) => (
               <button
                 key={option.value}
                 onClick={() => handleTimeRangeChange(option.value)}
                 className={`px-3 py-2 text-sm font-medium rounded-md transition-all duration-200 ${
                   selectedTimeRange === option.value
-                    ? 'bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-sm'
-                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+                    ? 'bg-white text-blue-700 shadow font-semibold'
+                    : 'text-gray-600 hover:text-gray-900'
                 }`}
                 title={option.description}
               >
@@ -567,7 +567,7 @@ export function MonitorDetailsComponent({
 
           {/* Loading indicator */}
           {isLoadingMetrics && (
-            <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+            <div className="flex items-center gap-2 text-sm text-gray-500 ">
               <LoadingSpinner size="small" message="" />
               Updating...
             </div>
@@ -594,7 +594,7 @@ export function MonitorDetailsComponent({
         {isLoadingMetrics ? (
           <SkeletonLoader variant="chart" />
         ) : !metricsError && uptimeData ? (
-          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700">
+          <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
             <div className="h-64">
               <Line data={uptimeData} options={uptimeChartOptions} />
             </div>
@@ -605,7 +605,7 @@ export function MonitorDetailsComponent({
         {isLoadingMetrics ? (
           <SkeletonLoader variant="chart" />
         ) : !metricsError && latencyData ? (
-          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700">
+          <div className="bg-white p-6 rounded-lg border border-gray-200">
             <div className="h-64">
               <Line data={latencyData} options={latencyChartOptions} />
             </div>
@@ -625,11 +625,9 @@ export function MonitorDetailsComponent({
         ) : stats && !metricsError ? (
           <>
             {/* Uptime */}
-            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700 transition-all duration-300 hover:shadow-md">
+            <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm hover:shadow-md hover:border-gray-300 transition-all">
               <div className="flex items-center justify-between mb-2">
-                <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                  Uptime
-                </h3>
+                <h3 className="text-sm font-medium text-gray-600">Uptime</h3>
                 <div
                   className={`w-3 h-3 rounded-full transition-colors duration-300 ${
                     stats.uptimePercentage >= 99
@@ -640,19 +638,19 @@ export function MonitorDetailsComponent({
                   }`}
                 ></div>
               </div>
-              <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+              <div className="text-3xl font-bold text-gray-900">
                 {stats.uptimePercentage.toFixed(2)}%
               </div>
-              <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              <div className="text-xs text-gray-500  mt-1">
                 {stats.totalChecks - stats.errorCount} / {stats.totalChecks}{' '}
                 checks successful
               </div>
             </div>
 
             {/* Average Latency */}
-            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700 transition-all duration-300 hover:shadow-md">
+            <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm hover:shadow-md hover:border-gray-300 transition-all">
               <div className="flex items-center justify-between mb-2">
-                <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                <h3 className="text-sm font-medium text-gray-600">
                   Avg Latency
                 </h3>
                 <div
@@ -665,18 +663,18 @@ export function MonitorDetailsComponent({
                   }`}
                 ></div>
               </div>
-              <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+              <div className="text-3xl font-bold text-gray-900">
                 {stats.averageLatency}ms
               </div>
-              <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              <div className="text-xs text-gray-500  mt-1">
                 Average response time
               </div>
             </div>
 
             {/* 95th Percentile */}
-            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700 transition-all duration-300 hover:shadow-md">
+            <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm hover:shadow-md hover:border-gray-300 transition-all">
               <div className="flex items-center justify-between mb-2">
-                <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                <h3 className="text-sm font-medium text-gray-600">
                   95th Percentile
                 </h3>
                 <div
@@ -689,20 +687,18 @@ export function MonitorDetailsComponent({
                   }`}
                 ></div>
               </div>
-              <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+              <div className="text-3xl font-bold text-gray-900">
                 {stats.p95Latency}ms
               </div>
-              <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              <div className="text-xs text-gray-500  mt-1">
                 95% of requests faster than
               </div>
             </div>
 
             {/* Error Count */}
-            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700 transition-all duration-300 hover:shadow-md">
+            <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm hover:shadow-md hover:border-gray-300 transition-all">
               <div className="flex items-center justify-between mb-2">
-                <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                  Errors
-                </h3>
+                <h3 className="text-sm font-medium text-gray-600">Errors</h3>
                 <div
                   className={`w-3 h-3 rounded-full transition-colors duration-300 ${
                     stats.errorCount === 0
@@ -713,10 +709,10 @@ export function MonitorDetailsComponent({
                   }`}
                 ></div>
               </div>
-              <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+              <div className="text-3xl font-bold text-gray-900">
                 {stats.errorCount}
               </div>
-              <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              <div className="text-xs text-gray-500  mt-1">
                 Failed checks in{' '}
                 {timeRangeOptions
                   .find((opt) => opt.value === selectedTimeRange)
@@ -728,15 +724,15 @@ export function MonitorDetailsComponent({
       </div>
 
       {/* Recent Check Results */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
-        <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+        <div className="px-6 py-5 border-b border-gray-200 bg-gray-50">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+              <h2 className="text-lg font-semibold text-gray-900 ">
                 Recent Checks
               </h2>
               {checkResults && !metricsError && (
-                <p className="text-sm text-gray-500 dark:text-gray-400">
+                <p className="text-sm text-gray-500 ">
                   Showing last {Math.min(10, checkResults.length)} checks from{' '}
                   {timeRangeOptions
                     .find((opt) => opt.value === selectedTimeRange)
@@ -749,23 +745,23 @@ export function MonitorDetailsComponent({
         </div>
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gray-50 dark:bg-gray-900">
+            <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500  uppercase tracking-wider">
                   Time
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500  uppercase tracking-wider">
                   Status
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500  uppercase tracking-wider">
                   Response Time
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500  uppercase tracking-wider">
                   Status Code
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+            <tbody className="divide-y divide-gray-200">
               {isLoadingMetrics ? (
                 <>
                   <SkeletonLoader variant="row" count={5} />
@@ -777,28 +773,28 @@ export function MonitorDetailsComponent({
                   .map((result) => (
                     <tr
                       key={result.id}
-                      className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-150"
+                      className="hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-0"
                     >
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 ">
                         {new Date(result.timestamp).toLocaleString()}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span
                           className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                             result.status === 'UP'
-                              ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                              : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+                              ? 'bg-green-100 text-green-800'
+                              : 'bg-red-100 text-red-800'
                           }`}
                         >
                           {result.status}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 ">
                         {result.responseTimeMs
                           ? `${result.responseTimeMs}ms`
                           : '-'}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-900 dark:text-gray-100">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-900 ">
                         {result.statusCode || '-'}
                       </td>
                     </tr>
@@ -810,40 +806,40 @@ export function MonitorDetailsComponent({
       </div>
 
       {/* Configuration Details */}
-      <div className="mt-8 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
-        <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+      <div className="mt-8 bg-white rounded-xl border border-gray-200 shadow-sm">
+        <div className="px-6 py-5 border-b border-gray-200 bg-gray-50">
+          <h2 className="text-lg font-semibold text-gray-900 ">
             Configuration
           </h2>
         </div>
         <div className="p-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-3">
+              <h3 className="font-medium text-gray-900  mb-3">
                 Request Settings
               </h3>
               <dl className="space-y-2 text-sm">
                 <div className="flex justify-between">
-                  <dt className="text-gray-500 dark:text-gray-400">Timeout:</dt>
-                  <dd className="text-gray-900 dark:text-gray-100">
+                  <dt className="text-gray-500 ">Timeout:</dt>
+                  <dd className="text-gray-900 ">
                     {monitor.timeout ? `${monitor.timeout}ms` : 'Default'}
                   </dd>
                 </div>
                 <div className="flex justify-between">
-                  <dt className="text-gray-500 dark:text-gray-400">
+                  <dt className="text-gray-500 ">
                     Max Latency:
                   </dt>
-                  <dd className="text-gray-900 dark:text-gray-100">
+                  <dd className="text-gray-900 ">
                     {monitor.maxLatencyMs
                       ? `${monitor.maxLatencyMs}ms`
                       : 'Not set'}
                   </dd>
                 </div>
                 <div className="flex justify-between">
-                  <dt className="text-gray-500 dark:text-gray-400">
+                  <dt className="text-gray-500 ">
                     Max Failures:
                   </dt>
-                  <dd className="text-gray-900 dark:text-gray-100">
+                  <dd className="text-gray-900 ">
                     {monitor.maxConsecutiveFailures || 'Not set'}
                   </dd>
                 </div>
@@ -851,23 +847,23 @@ export function MonitorDetailsComponent({
             </div>
 
             <div>
-              <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-3">
+              <h3 className="font-medium text-gray-900  mb-3">
                 Timestamps
               </h3>
               <dl className="space-y-2 text-sm">
                 <div className="flex justify-between">
-                  <dt className="text-gray-500 dark:text-gray-400">Created:</dt>
-                  <dd className="text-gray-900 dark:text-gray-100">
+                  <dt className="text-gray-500 ">Created:</dt>
+                  <dd className="text-gray-900 ">
                     {monitor.createdAt
                       ? new Date(monitor.createdAt).toLocaleString()
                       : 'Unknown'}
                   </dd>
                 </div>
                 <div className="flex justify-between">
-                  <dt className="text-gray-500 dark:text-gray-400">
+                  <dt className="text-gray-500 ">
                     Last Updated:
                   </dt>
-                  <dd className="text-gray-900 dark:text-gray-100">
+                  <dd className="text-gray-900 ">
                     {monitor.updatedAt
                       ? new Date(monitor.updatedAt).toLocaleString()
                       : 'Unknown'}
@@ -880,16 +876,16 @@ export function MonitorDetailsComponent({
           {/* Headers & Body */}
           {monitor.headers && Object.keys(monitor.headers).length > 0 && (
             <div className="mt-6">
-              <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-3">
+              <h3 className="font-medium text-gray-900  mb-3">
                 Custom Headers
               </h3>
-              <div className="bg-gray-50 dark:bg-gray-900 p-3 rounded text-sm">
+              <div className="bg-gray-50 p-3 rounded text-sm">
                 {Object.entries(monitor.headers).map(([key, value]) => (
                   <div key={key} className="flex gap-2">
-                    <span className="font-mono text-gray-600 dark:text-gray-400">
+                    <span className="font-mono text-gray-600 ">
                       {key}:
                     </span>
-                    <span className="font-mono text-gray-900 dark:text-gray-100">
+                    <span className="font-mono text-gray-900 ">
                       {value}
                     </span>
                   </div>
@@ -900,10 +896,10 @@ export function MonitorDetailsComponent({
 
           {monitor.body && (
             <div className="mt-6">
-              <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-3">
+              <h3 className="font-medium text-gray-900  mb-3">
                 Request Body
               </h3>
-              <pre className="bg-gray-50 dark:bg-gray-900 p-3 rounded text-sm font-mono text-gray-800 dark:text-gray-200 overflow-x-auto">
+              <pre className="bg-gray-50 p-3 rounded text-sm font-mono text-gray-800  overflow-x-auto">
                 {monitor.body}
               </pre>
             </div>
