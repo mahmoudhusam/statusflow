@@ -3,8 +3,9 @@
 import { useState, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-//import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { monitorsApi } from '@/lib/api/monitors';
 
 interface MonitorFormData {
   name: string;
@@ -20,7 +21,7 @@ interface MonitorFormData {
 
 export default function CreateMonitorPage() {
   const router = useRouter();
-  // const { token } = useAuth();
+  const { token } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -98,9 +99,7 @@ export default function CreateMonitorPage() {
         body: formData.body.trim() || undefined,
       };
 
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      console.log('Monitor created:', payload);
+      await monitorsApi.createMonitor(payload, token!);
       router.push('/dashboard/monitors');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create monitor');

@@ -1,44 +1,44 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import monitors from '@/mocks/monitors.json';
 import { MonitorCard } from '@/components/monitors/MonitorCard';
 import { SkeletonLoader } from '@/components/ui/SkeletonLoader';
 import { ErrorDisplay } from '@/components/ui/ErrorDisplay';
-import { useAsyncData, simulateApiCall } from '@/hooks/useAsyncData';
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { useAuth } from '@/contexts/AuthContext';
+import { monitorsApi } from '@/lib/api/monitors';
 import type { Monitor } from '@/types/monitor';
 
-async function fetchMonitors(userId: string): Promise<Monitor[]> {
-  const userMonitors = monitors.filter((m) => m.user?.id === userId);
-  return simulateApiCall(userMonitors as Monitor[], {
-    delay: 1000,
-  });
-}
-
 export default function MonitorsPage() {
-  const currentUserId = 'user-uuid-001';
-  const [refreshKey, setRefreshKey] = useState(0);
+  const { token } = useAuth();
+  const [monitors, setMonitors] = useState<Monitor[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
 
-  const fetchMonitorsFn = useCallback(
-    () => fetchMonitors(currentUserId),
-    [currentUserId]
-  );
+  const fetchMonitors = async () => {
+    if (!token) return;
 
-  const {
-    data: myMonitors,
-    loading,
-    error,
-    retry,
-  } = useAsyncData<Monitor[]>(fetchMonitorsFn, [refreshKey], {
-    simulateDelay: 1000,
-    simulateErrorRate: 0,
-    retryCount: 3,
-    retryDelay: 1000,
-  });
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await monitorsApi.getMonitors(token);
+      setMonitors(data);
+    } catch (err) {
+      setError(
+        err instanceof Error ? err : new Error('Failed to fetch monitors')
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchMonitors();
+  }, [token]);
 
   const handleRefresh = () => {
-    setRefreshKey((prev) => prev + 1);
+    fetchMonitors();
   };
 
   return (
@@ -48,12 +48,12 @@ export default function MonitorsPage() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 mb-2">Monitors</h1>
-            {!loading && !error && myMonitors && (
+            {!loading && !error && monitors && (
               <p className="text-gray-600 flex items-center gap-2">
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-sm font-medium">
                   <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
-                  {myMonitors.length} active monitor
-                  {myMonitors.length !== 1 ? 's' : ''}
+                  {monitors.length} active monitor
+                  {monitors.length !== 1 ? 's' : ''}
                 </span>
               </p>
             )}
@@ -118,14 +118,14 @@ export default function MonitorsPage() {
           title="Failed to load monitors"
           message="We couldn't fetch your monitors. Please check your connection and try again."
           error={error}
-          onRetry={retry}
+          onRetry={fetchMonitors}
         />
       )}
 
       {/* Monitors Grid */}
-      {!loading && !error && myMonitors && (
+      {!loading && !error && monitors && (
         <>
-          {myMonitors.length === 0 ? (
+          {monitors.length === 0 ? (
             <div className="text-center py-16">
               <div className="bg-white rounded-2xl border border-gray-200 p-12 max-w-2xl mx-auto shadow-sm">
                 <div className="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -173,7 +173,7 @@ export default function MonitorsPage() {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {myMonitors.map((monitor) => (
+              {monitors.map((monitor) => (
                 <MonitorCard key={monitor.id} monitor={monitor} />
               ))}
             </div>
