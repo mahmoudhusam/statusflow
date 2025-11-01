@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { MonitorCard } from '@/components/monitors/MonitorCard';
 import { SkeletonLoader } from '@/components/ui/SkeletonLoader';
 import { ErrorDisplay } from '@/components/ui/ErrorDisplay';
-import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { useAuth } from '@/contexts/AuthContext';
 import { monitorsApi } from '@/lib/api/monitors';
 import type { Monitor } from '@/types/monitor';

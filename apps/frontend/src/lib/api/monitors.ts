@@ -1,5 +1,5 @@
 import { apiClient } from '../api-client';
-import type { Monitor, CheckResult, MonitorStats } from '@/types/monitor';
+import type { Monitor, MonitorStats } from '@/types/monitor';
 
 export interface CreateMonitorDto {
   name: string;

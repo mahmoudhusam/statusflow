@@ -38,7 +38,14 @@ interface MonitorDetailsComponentProps {
 }
 
 // Prepare chart data from metrics API response
-function prepareChartData(metricsData: any) {
+function prepareChartData(metricsData: {
+  metrics?: Array<{
+    timestamp: string;
+    uptime?: number;
+    avgResponseTime?: number;
+    p95ResponseTime?: number;
+  }>;
+}) {
   if (!metricsData?.metrics || metricsData.metrics.length === 0) {
     return { uptimeData: null, latencyData: null };
   }
@@ -48,18 +55,25 @@ function prepareChartData(metricsData: any) {
   const avgLatencies: number[] = [];
   const p95Latencies: number[] = [];
 
-  metricsData.metrics.forEach((metric: any) => {
-    const date = new Date(metric.timestamp);
-    const label = date.toLocaleTimeString('en-US', {
-      hour: '2-digit',
-      minute: '2-digit',
-    });
+  metricsData.metrics.forEach(
+    (metric: {
+      timestamp: string;
+      uptime?: number;
+      avgResponseTime?: number;
+      p95ResponseTime?: number;
+    }) => {
+      const date = new Date(metric.timestamp);
+      const label = date.toLocaleTimeString('en-US', {
+        hour: '2-digit',
+        minute: '2-digit',
+      });
 
-    labels.push(label);
-    uptimePercentages.push(metric.uptime || 0);
-    avgLatencies.push(metric.avgResponseTime || 0);
-    p95Latencies.push(metric.p95ResponseTime || 0);
-  });
+      labels.push(label);
+      uptimePercentages.push(metric.uptime || 0);
+      avgLatencies.push(metric.avgResponseTime || 0);
+      p95Latencies.push(metric.p95ResponseTime || 0);
+    }
+  );
 
   const uptimeData = {
     labels,
@@ -182,17 +196,32 @@ export function MonitorDetailsComponent({
     fetchMetrics();
   }, [monitor.id, selectedTimeRange, refreshKey, token]);
 
-  const stats: MonitorStats | null = useMemo(() => {
-    if (!metricsData?.summary) return null;
+const stats: MonitorStats | null = useMemo(() => {
+  if (!metricsData?.summary) return null;
 
-    return {
-      uptimePercentage: metricsData.summary.totalUptime || 0,
-      averageLatency: Math.round(metricsData.summary.avgResponseTime || 0),
-      p95Latency: 0, // Not in summary, would need to calculate from metrics
-      errorCount: metricsData.summary.totalErrors || 0,
-      totalChecks: metricsData.summary.totalChecks || 0,
-    };
-  }, [metricsData]);
+  let p95Latency = 0;
+  if (metricsData?.metrics && metricsData.metrics.length > 0) {
+    // Extract all response times that are available
+    const responseTimes: number[] = metricsData.metrics
+      .map((metric: any) => metric.avgResponseTime || metric.p95ResponseTime)
+      .filter((time: number) => time !== null && time !== undefined && time > 0)
+      .sort((a: number, b: number) => a - b);
+
+    if (responseTimes.length > 0) {
+      // Calculate 95th percentile index
+      const p95Index = Math.ceil(responseTimes.length * 0.95) - 1;
+      p95Latency = Math.round(responseTimes[p95Index]);
+    }
+  }
+
+  return {
+    uptimePercentage: metricsData.summary.totalUptime || 0,
+    averageLatency: Math.round(metricsData.summary.avgResponseTime || 0),
+    p95Latency,
+    errorCount: metricsData.summary.totalErrors || 0,
+    totalChecks: metricsData.summary.totalChecks || 0,
+  };
+}, [metricsData]);
 
   const { uptimeData, latencyData } = useMemo(
     () => prepareChartData(metricsData),
