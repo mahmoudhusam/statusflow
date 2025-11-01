@@ -203,12 +203,10 @@ export function MonitorDetailsComponent({
     ? formatRelative(new Date(monitor.lastCheckedAt), new Date())
     : 'Never checked';
 
-  // Determine if monitor is UP based on latest check result from metrics or checkResults array
   const isUp =
-    latestCheckResult?.status === 'UP' ||
-    (monitor.checkResults && monitor.checkResults.length > 0
-      ? monitor.checkResults[monitor.checkResults.length - 1]?.status === 'UP'
-      : false);
+    monitor.latestStatus?.isUp ||
+    (latestCheckResult && latestCheckResult.status === 'UP') ||
+    false;
 
   // Chart options
   const uptimeChartOptions: ChartOptions<'line'> = {

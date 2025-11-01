@@ -45,7 +45,28 @@ export class MonitorController {
   @Get()
   async getAllMonitors(@GetUser('id') userId: string) {
     const monitors = await this.monitorService.getMonitorsByUser(userId);
-    return monitors.map(mapMonitorToResponse);
+
+    //Fetch latest check results for each monitor
+    const monitorsWithStatus = await Promise.all(
+      monitors.map(async (monitor) => {
+        const latestResult = await this.monitorService.getLatestCheckResult(
+          monitor.id,
+        );
+        return {
+          ...mapMonitorToResponse(monitor),
+          latestStatus: latestResult
+            ? {
+                isUp: latestResult.isUp,
+                status: latestResult.status,
+                responseTime: latestResult.responseTime,
+                errorMessage: latestResult.errorMessage,
+                checkedAt: latestResult.createdAt,
+              }
+            : null,
+        };
+      }),
+    );
+    return monitorsWithStatus;
   }
 
   //GET /monitors/:id: Get monitor details + latest status
