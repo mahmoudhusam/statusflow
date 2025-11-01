@@ -34,7 +34,7 @@ import { QueueModule } from './queue/queue.module';
         synchronize: false, // Keep this as false for migrations
         migrations: [__dirname + '/migrations/*{.ts,.js}'],
         migrationsRun: false,
-        logging: ['query', 'error'], // Enable query and error logging
+        // logging: ['query', 'error'], // Enable query and error logging
       }),
     }),
 

@@ -7,7 +7,6 @@ export type Monitor = {
   maxLatencyMs?: number;
   maxConsecutiveFailures?: number;
   lastCheckedAt?: string | null;
-  lastStatus?: 'UP' | 'DOWN';
   lastStatusCode?: number;
   lastResponseTimeMs?: number;
   httpMethod?: string;
@@ -18,6 +17,7 @@ export type Monitor = {
   updatedAt?: string;
   user?: {
     id: string;
+    email?: string;
   };
   checkResults?: CheckResult[];
 };
