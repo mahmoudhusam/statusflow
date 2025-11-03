@@ -37,15 +37,27 @@ interface MonitorDetailsComponentProps {
   monitor: Monitor;
 }
 
+interface MetricData {
+  timestamp: string;
+  uptime?: number | null;
+  avgResponseTime?: number | null;
+  p95ResponseTime?: number | null;
+  totalChecks?: number;
+  errors?: number;
+}
+
+interface MetricsResponse {
+  metrics?: MetricData[];
+  summary?: {
+    totalUptime: number;
+    avgResponseTime: number;
+    totalChecks: number;
+    totalErrors: number;
+  };
+}
+
 // Prepare chart data from metrics API response
-function prepareChartData(metricsData: {
-  metrics?: Array<{
-    timestamp: string;
-    uptime?: number;
-    avgResponseTime?: number;
-    p95ResponseTime?: number;
-  }>;
-}) {
+function prepareChartData(metricsData: MetricsResponse | null) {
   if (!metricsData?.metrics || metricsData.metrics.length === 0) {
     return { uptimeData: null, latencyData: null };
   }
@@ -55,25 +67,18 @@ function prepareChartData(metricsData: {
   const avgLatencies: number[] = [];
   const p95Latencies: number[] = [];
 
-  metricsData.metrics.forEach(
-    (metric: {
-      timestamp: string;
-      uptime?: number;
-      avgResponseTime?: number;
-      p95ResponseTime?: number;
-    }) => {
-      const date = new Date(metric.timestamp);
-      const label = date.toLocaleTimeString('en-US', {
-        hour: '2-digit',
-        minute: '2-digit',
-      });
+  metricsData.metrics.forEach((metric: MetricData) => {
+    const date = new Date(metric.timestamp);
+    const label = date.toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+    });
 
-      labels.push(label);
-      uptimePercentages.push(metric.uptime || 0);
-      avgLatencies.push(metric.avgResponseTime || 0);
-      p95Latencies.push(metric.p95ResponseTime || 0);
-    }
-  );
+    labels.push(label);
+    uptimePercentages.push(metric.uptime || 0);
+    avgLatencies.push(metric.avgResponseTime || 0);
+    p95Latencies.push(metric.p95ResponseTime || 0);
+  });
 
   const uptimeData = {
     labels,
@@ -124,10 +129,13 @@ export function MonitorDetailsComponent({
   const { token } = useAuth();
   const [selectedTimeRange, setSelectedTimeRange] = useState<TimeRange>('24h');
   const [refreshKey, setRefreshKey] = useState(0);
-  const [metricsData, setMetricsData] = useState<any>(null);
+  const [metricsData, setMetricsData] = useState<MetricsResponse | null>(null);
   const [isLoadingMetrics, setIsLoadingMetrics] = useState(false);
   const [metricsError, setMetricsError] = useState<Error | null>(null);
-  const [latestCheckResult, setLatestCheckResult] = useState<any>(null);
+  const [latestCheckResult, setLatestCheckResult] = useState<{
+    status: string;
+    responseTime?: number;
+  } | null>(null);
 
   const timeRangeOptions: {
     value: TimeRange;
@@ -173,14 +181,14 @@ export function MonitorDetailsComponent({
           { from, to: now, interval: selectedTimeRange === '1h' ? '1m' : '1h' },
           token
         );
-        setMetricsData(data);
+        setMetricsData(data as MetricsResponse);
 
         // Get the latest check result from the metrics data
         if (data?.metrics && data.metrics.length > 0) {
           const latest = data.metrics[data.metrics.length - 1];
           setLatestCheckResult({
-            status: latest.uptime > 0 ? 'UP' : 'DOWN',
-            responseTime: latest.avgResponseTime,
+            status: (latest.uptime || 0) > 0 ? 'UP' : 'DOWN',
+            responseTime: latest.avgResponseTime || undefined,
           });
         }
       } catch (error) {
@@ -196,32 +204,35 @@ export function MonitorDetailsComponent({
     fetchMetrics();
   }, [monitor.id, selectedTimeRange, refreshKey, token]);
 
-const stats: MonitorStats | null = useMemo(() => {
-  if (!metricsData?.summary) return null;
+  const stats: MonitorStats | null = useMemo(() => {
+    if (!metricsData?.summary) return null;
 
-  let p95Latency = 0;
-  if (metricsData?.metrics && metricsData.metrics.length > 0) {
-    // Extract all response times that are available
-    const responseTimes: number[] = metricsData.metrics
-      .map((metric: any) => metric.avgResponseTime || metric.p95ResponseTime)
-      .filter((time: number) => time !== null && time !== undefined && time > 0)
-      .sort((a: number, b: number) => a - b);
+    // Calculate p95 from the p95ResponseTime values already provided by backend
+    // Use the maximum p95 value across all time buckets as the overall p95
+    let p95Latency = 0;
+    if (metricsData?.metrics && metricsData.metrics.length > 0) {
+      const p95Values = metricsData.metrics
+        .map((metric) => metric.p95ResponseTime)
+        .filter(
+          (time): time is number =>
+            time !== null && time !== undefined && time > 0
+        );
 
-    if (responseTimes.length > 0) {
-      // Calculate 95th percentile index
-      const p95Index = Math.ceil(responseTimes.length * 0.95) - 1;
-      p95Latency = Math.round(responseTimes[p95Index]);
+      if (p95Values.length > 0) {
+        // Take the maximum p95 value across all buckets
+        // This represents the worst-case 95th percentile latency
+        p95Latency = Math.round(Math.max(...p95Values));
+      }
     }
-  }
 
-  return {
-    uptimePercentage: metricsData.summary.totalUptime || 0,
-    averageLatency: Math.round(metricsData.summary.avgResponseTime || 0),
-    p95Latency,
-    errorCount: metricsData.summary.totalErrors || 0,
-    totalChecks: metricsData.summary.totalChecks || 0,
-  };
-}, [metricsData]);
+    return {
+      uptimePercentage: metricsData.summary.totalUptime || 0,
+      averageLatency: Math.round(metricsData.summary.avgResponseTime || 0),
+      p95Latency,
+      errorCount: metricsData.summary.totalErrors || 0,
+      totalChecks: metricsData.summary.totalChecks || 0,
+    };
+  }, [metricsData]);
 
   const { uptimeData, latencyData } = useMemo(
     () => prepareChartData(metricsData),
@@ -610,7 +621,7 @@ const stats: MonitorStats | null = useMemo(() => {
                 {stats.p95Latency}ms
               </div>
               <div className="text-xs text-gray-500  mt-1">
-                95% of requests faster than
+                Worst-case 95th percentile
               </div>
             </div>
 

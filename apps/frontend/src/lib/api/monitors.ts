@@ -23,6 +23,31 @@ export interface MonitorMetricsQuery {
   interval?: string;
 }
 
+export interface MonitorMetricsResponse {
+  monitorId: string;
+  name: string;
+  url: string;
+  timeRange: {
+    from: Date;
+    to: Date;
+    interval: string;
+  };
+  summary: {
+    totalUptime: number;
+    avgResponseTime: number;
+    totalChecks: number;
+    totalErrors: number;
+  };
+  metrics: Array<{
+    timestamp: string;
+    uptime: number | null;
+    avgResponseTime: number | null;
+    p95ResponseTime: number | null;
+    totalChecks: number;
+    errors: number;
+  }>;
+}
+
 export const monitorsApi = {
   // Get all monitors for the current user
   async getMonitors(token: string): Promise<Monitor[]> {
@@ -81,12 +106,15 @@ export const monitorsApi = {
     id: string,
     query: MonitorMetricsQuery,
     token: string
-  ): Promise<any> {
+  ): Promise<MonitorMetricsResponse> {
     const params = new URLSearchParams({
       from: query.from.toISOString(),
       to: query.to.toISOString(),
       ...(query.interval && { interval: query.interval }),
     });
-    return apiClient.get<any>(`/monitors/${id}/metrics?${params}`, token);
+    return apiClient.get<MonitorMetricsResponse>(
+      `/monitors/${id}/metrics?${params}`,
+      token
+    );
   },
 };

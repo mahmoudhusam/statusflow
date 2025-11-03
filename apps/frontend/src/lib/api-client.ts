@@ -11,11 +11,16 @@ export class ApiError extends Error {
   }
 }
 
+interface ErrorResponse {
+  message?: string;
+  errors?: Record<string, string[]>;
+}
+
 async function handleResponse<T>(response: Response): Promise<T> {
   if (!response.ok) {
-    let errorData: any = {};
+    let errorData: ErrorResponse = {};
     try {
-      errorData = await response.json();
+      errorData = (await response.json()) as ErrorResponse;
     } catch {
       errorData = { message: response.statusText || 'An error occurred' };
     }

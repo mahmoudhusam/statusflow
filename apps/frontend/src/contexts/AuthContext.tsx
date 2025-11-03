@@ -141,9 +141,11 @@ function AuthProviderInner({ children }: AuthProviderProps) {
         // Redirect
         const destination = redirectTo || '/dashboard/monitors';
         router.push(destination);
-      } catch (error: any) {
+      } catch (error) {
         console.error('Login failed:', error);
-        throw new Error(error.message || 'Invalid credentials');
+        const errorMessage =
+          error instanceof Error ? error.message : 'Invalid credentials';
+        throw new Error(errorMessage);
       }
     },
     [router, fetchCurrentUser]
@@ -153,19 +155,24 @@ function AuthProviderInner({ children }: AuthProviderProps) {
     async (email: string, password: string) => {
       try {
         // Call signup API
-        const userData = await apiClient.post<User>('/auth/signup', {
+        await apiClient.post<User>('/auth/signup', {
           email,
           password,
         });
 
         // Auto-login after signup
         await login(email, password);
-      } catch (error: any) {
+      } catch (error) {
         console.error('Signup failed:', error);
-        if (error.message?.includes('already exists')) {
+        if (
+          error instanceof Error &&
+          error.message?.includes('already exists')
+        ) {
           throw new Error('User already exists');
         }
-        throw new Error(error.message || 'Signup failed');
+        const errorMessage =
+          error instanceof Error ? error.message : 'Signup failed';
+        throw new Error(errorMessage);
       }
     },
     [login]

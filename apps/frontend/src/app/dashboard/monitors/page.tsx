@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { MonitorCard } from '@/components/monitors/MonitorCard';
 import { SkeletonLoader } from '@/components/ui/SkeletonLoader';
@@ -15,7 +15,7 @@ export default function MonitorsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
-  const fetchMonitors = async () => {
+  const fetchMonitors = useCallback(async () => {
     if (!token) return;
 
     try {
@@ -30,11 +30,11 @@ export default function MonitorsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [token]);
 
   useEffect(() => {
     fetchMonitors();
-  }, [token]);
+  }, [fetchMonitors]);
 
   const handleRefresh = () => {
     fetchMonitors();

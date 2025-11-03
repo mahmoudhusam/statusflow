@@ -35,9 +35,14 @@ export default function MonitorPage({ params }: MonitorPageProps) {
         const data = await monitorsApi.getMonitor(resolvedParams.id, token);
         setMonitor(data);
         setError(null);
-      } catch (err: any) {
+      } catch (err) {
         console.error('Failed to fetch monitor:', err);
-        if (err?.statusCode === 404) {
+        if (
+          err &&
+          typeof err === 'object' &&
+          'statusCode' in err &&
+          err.statusCode === 404
+        ) {
           notFound();
         }
         setError(
