@@ -1,5 +1,6 @@
 export interface MonitorReport {
-  monitorId: string;
+  id: string; // This might be the monitor ID
+  monitorId?: string; // Alternative ID field
   monitorName: string;
   monitorUrl: string;
   totalChecks: number;
@@ -18,17 +19,18 @@ export interface MonitorReport {
 }
 
 export interface ReportData {
-  dateRange: {
-    start: string;
-    end: string;
-  };
+  format: 'json' | 'csv' | 'pdf';
   generatedAt: string;
+  dateRange: {
+    startDate: string;
+    endDate: string;
+  };
   monitors: MonitorReport[];
   summary: {
     totalMonitors: number;
-    avgUptimePercentage: number;
     totalChecks: number;
-    totalDowntime: number;
+    overallUptime: number;
+    avgResponseTime: number;
   };
 }
 

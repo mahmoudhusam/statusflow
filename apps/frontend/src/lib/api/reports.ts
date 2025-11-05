@@ -1,6 +1,7 @@
-
 import { apiClient } from '../api-client';
 import type { ReportData, ReportFilters } from '@/types/report';
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 
 export const reportsApi = {
   /**
@@ -10,61 +11,79 @@ export const reportsApi = {
     filters: ReportFilters,
     token: string
   ): Promise<ReportData> {
-    const response = await apiClient.post<ReportData>(
+    return await apiClient.post<ReportData>(
       '/reports/generate',
       {
         monitorIds: filters.monitorIds,
         startDate: filters.startDate.toISOString(),
         endDate: filters.endDate.toISOString(),
+        format: 'json',
       },
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }
+      token
     );
-    return response.data;
   },
 
   /**
    * Export report data as CSV
    */
   async exportCsv(filters: ReportFilters, token: string): Promise<Blob> {
-    const response = await apiClient.post(
-      '/reports/export/csv',
+    const queryParams = new URLSearchParams({
+      startDate: filters.startDate.toISOString(),
+      endDate: filters.endDate.toISOString(),
+      format: 'csv',
+    });
+
+    // Add monitor IDs as array params
+    filters.monitorIds.forEach((id) => {
+      queryParams.append('monitorIds', id);
+    });
+
+    const response = await fetch(
+      `${API_BASE_URL}/reports/export/csv?${queryParams}`,
       {
-        monitorIds: filters.monitorIds,
-        startDate: filters.startDate.toISOString(),
-        endDate: filters.endDate.toISOString(),
-      },
-      {
+        method: 'GET',
         headers: {
           Authorization: `Bearer ${token}`,
         },
-        responseType: 'blob',
       }
     );
-    return response.data;
+
+    if (!response.ok) {
+      throw new Error(`Failed to export CSV: ${response.statusText}`);
+    }
+
+    return response.blob();
   },
 
   /**
    * Export report data as JSON
    */
   async exportJson(filters: ReportFilters, token: string): Promise<Blob> {
-    const response = await apiClient.post(
-      '/reports/export/json',
+    const queryParams = new URLSearchParams({
+      startDate: filters.startDate.toISOString(),
+      endDate: filters.endDate.toISOString(),
+      format: 'json',
+    });
+
+    // Add monitor IDs as array params
+    filters.monitorIds.forEach((id) => {
+      queryParams.append('monitorIds', id);
+    });
+
+    const response = await fetch(
+      `${API_BASE_URL}/reports/export/json?${queryParams}`,
       {
-        monitorIds: filters.monitorIds,
-        startDate: filters.startDate.toISOString(),
-        endDate: filters.endDate.toISOString(),
-      },
-      {
+        method: 'GET',
         headers: {
           Authorization: `Bearer ${token}`,
         },
-        responseType: 'blob',
       }
     );
-    return response.data;
+
+    if (!response.ok) {
+      throw new Error(`Failed to export JSON: ${response.statusText}`);
+    }
+
+    return response.blob();
   },
 };

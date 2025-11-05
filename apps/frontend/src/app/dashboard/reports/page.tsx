@@ -1,6 +1,5 @@
 'use client';
 
-
 import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { monitorsApi } from '@/lib/api/monitors';
@@ -87,7 +86,7 @@ export default function ReportsPage() {
       if (!token) return;
 
       try {
-        const data = await monitorsApi.getAll(token);
+        const data = await monitorsApi.getMonitors(token);
         setMonitors(data);
         // Select all monitors by default
         setSelectedMonitors(data.map((m) => m.id));
@@ -305,7 +304,7 @@ export default function ReportsPage() {
 
       {/* Filters Section */}
       <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-        <h2 className="text-xl font-semibold mb-4">Report Filters</h2>
+        <h2 className="text-xl font-semibold mb-4 text-gray-700">Report Filters</h2>
 
         {/* Date Range Selection */}
         <div className="mb-6">
@@ -430,14 +429,18 @@ export default function ReportsPage() {
       {/* Error Display */}
       {error && (
         <div className="mb-6">
-          <ErrorDisplay message={error} onRetry={handleGenerateReport} />
+          <ErrorDisplay
+            message={error}
+            onRetry={handleGenerateReport}
+            compact
+          />
         </div>
       )}
 
       {/* Loading State */}
       {loading && (
         <div className="flex justify-center py-12">
-          <LoadingSpinner size="large" />
+          <LoadingSpinner size="large" message="Generating report..." />
         </div>
       )}
 
@@ -459,7 +462,10 @@ export default function ReportsPage() {
                 Average Uptime
               </div>
               <div className="text-3xl font-bold text-green-600">
-                {reportData.summary.avgUptimePercentage.toFixed(2)}%
+                {reportData.summary.overallUptime
+                  ? reportData.summary.overallUptime.toFixed(2)
+                  : '0.00'}
+                %
               </div>
             </div>
             <div className="bg-white rounded-lg shadow-md p-6">
@@ -472,10 +478,13 @@ export default function ReportsPage() {
             </div>
             <div className="bg-white rounded-lg shadow-md p-6">
               <div className="text-sm font-medium text-gray-600 mb-1">
-                Total Downtime
+                Avg Response Time
               </div>
-              <div className="text-3xl font-bold text-red-600">
-                {Math.round(reportData.summary.totalDowntime)} min
+              <div className="text-3xl font-bold text-blue-600">
+                {reportData.summary.avgResponseTime
+                  ? Math.round(reportData.summary.avgResponseTime)
+                  : 0}
+                ms
               </div>
             </div>
           </div>
@@ -627,7 +636,10 @@ export default function ReportsPage() {
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {reportData.monitors.map((monitor) => (
-                    <tr key={monitor.monitorId} className="hover:bg-gray-50">
+                    <tr
+                      key={monitor.id || monitor.monitorId}
+                      className="hover:bg-gray-50"
+                    >
                       <td className="px-4 py-4">
                         <div>
                           <div className="text-sm font-medium text-gray-900">
@@ -686,12 +698,12 @@ export default function ReportsPage() {
               <div>
                 <span className="font-medium">Report Period:</span>{' '}
                 {format(
-                  new Date(reportData.dateRange.start),
+                  new Date(reportData.dateRange.startDate || dateRange.start),
                   'MMM d, yyyy HH:mm'
                 )}{' '}
                 -{' '}
                 {format(
-                  new Date(reportData.dateRange.end),
+                  new Date(reportData.dateRange.endDate || dateRange.end),
                   'MMM d, yyyy HH:mm'
                 )}
               </div>
