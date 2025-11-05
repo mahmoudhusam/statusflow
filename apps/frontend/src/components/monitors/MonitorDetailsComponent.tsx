@@ -248,7 +248,7 @@ export function MonitorDetailsComponent({
     (latestCheckResult && latestCheckResult.status === 'UP') ||
     false;
 
-  // Chart options
+  // Chart options with TypeScript fixes
   const uptimeChartOptions: ChartOptions<'line'> = {
     responsive: true,
     maintainAspectRatio: false,
@@ -272,7 +272,11 @@ export function MonitorDetailsComponent({
         bodyColor: 'white',
         callbacks: {
           label: function (context) {
-            return `Uptime: ${context.parsed.y.toFixed(2)}%`;
+            const value = context.parsed.y;
+            if (typeof value === 'number') {
+              return `Uptime: ${value.toFixed(2)}%`;
+            }
+            return 'Uptime: N/A';
           },
         },
       },
@@ -329,7 +333,12 @@ export function MonitorDetailsComponent({
         bodyColor: 'white',
         callbacks: {
           label: function (context) {
-            return `${context.dataset.label}: ${context.parsed.y}ms`;
+            const value = context.parsed.y;
+            const label = context.dataset.label || '';
+            if (typeof value === 'number') {
+              return `${label}: ${value}ms`;
+            }
+            return `${label}: N/A`;
           },
         },
       },

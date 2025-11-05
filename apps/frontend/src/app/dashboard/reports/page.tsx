@@ -304,7 +304,9 @@ export default function ReportsPage() {
 
       {/* Filters Section */}
       <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-        <h2 className="text-xl font-semibold mb-4 text-gray-700">Report Filters</h2>
+        <h2 className="text-xl font-semibold mb-4 text-gray-700">
+          Report Filters
+        </h2>
 
         {/* Date Range Selection */}
         <div className="mb-6">
@@ -518,7 +520,7 @@ export default function ReportsPage() {
                       tooltip: {
                         callbacks: {
                           label: (context) =>
-                            `Uptime: ${context.parsed.y.toFixed(2)}%`,
+                            `Uptime: ${context.parsed.y?.toFixed(2) ?? 0}%`,
                         },
                       },
                     },
@@ -552,7 +554,7 @@ export default function ReportsPage() {
                       tooltip: {
                         callbacks: {
                           label: (context) =>
-                            `${context.dataset.label}: ${context.parsed.y.toFixed(2)}ms`,
+                            `${context.dataset.label}: ${context.parsed.y?.toFixed(2) ?? 0}ms`,
                         },
                       },
                     },
