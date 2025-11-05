@@ -11,6 +11,9 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { AlertService } from './alert/alert.service';
 import { AlertModule } from './alert/alert.module';
 import { QueueModule } from './queue/queue.module';
+import { ReportsService } from './reports/reports.service';
+import { ReportsController } from './reports/reports.controller';
+import { ReportsModule } from './reports/reports.module';
 
 @Module({
   imports: [
@@ -44,8 +47,9 @@ import { QueueModule } from './queue/queue.module';
     CheckResultModule,
     AlertModule,
     QueueModule,
+    ReportsModule,
   ],
-  controllers: [AppController],
-  providers: [AppService, AlertService],
+  controllers: [AppController, ReportsController],
+  providers: [AppService, AlertService, ReportsService],
 })
 export class AppModule {}
