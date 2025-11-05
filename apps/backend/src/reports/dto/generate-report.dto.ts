@@ -1,33 +1,57 @@
-import {
-  IsArray,
-  IsDateString,
-  IsString,
-  ArrayNotEmpty,
-} from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
+import { IsArray, IsDateString, IsEnum, IsOptional } from 'class-validator';
+
+export enum ReportFormat {
+  JSON = 'json',
+  CSV = 'csv',
+  PDF = 'pdf',
+}
 
 export class GenerateReportDto {
-  @ApiProperty({
-    description: 'Array of monitor IDs to include in the report',
-    example: ['uuid-1', 'uuid-2'],
-    type: [String],
-  })
+  @IsOptional()
   @IsArray()
-  @ArrayNotEmpty()
-  @IsString({ each: true })
-  monitorIds: string[];
+  monitorIds?: string[];
 
-  @ApiProperty({
-    description: 'Start date for the report period (ISO 8601 format)',
-    example: '2025-10-27T00:00:00.000Z',
-  })
   @IsDateString()
   startDate: string;
 
-  @ApiProperty({
-    description: 'End date for the report period (ISO 8601 format)',
-    example: '2025-11-03T23:59:59.999Z',
-  })
   @IsDateString()
   endDate: string;
+
+  @IsEnum(ReportFormat)
+  format: ReportFormat;
+}
+
+export interface MonitorReportData {
+  id: string;
+  monitorName: string;
+  monitorUrl: string;
+  uptimePercentage: number;
+  totalChecks: number;
+  successfulChecks: number;
+  failedChecks: number;
+  avgResponseTime: number;
+  minResponseTime: number;
+  maxResponseTime: number;
+  p95ResponseTime: number;
+  p99ResponseTime: number;
+  downtime: {
+    totalMinutes: number;
+    incidents: number;
+  };
+}
+
+export interface ReportData {
+  format: ReportFormat;
+  generatedAt: Date;
+  dateRange: {
+    startDate: string;
+    endDate: string;
+  };
+  monitors: MonitorReportData[];
+  summary: {
+    totalMonitors: number;
+    totalChecks: number;
+    overallUptime: number;
+    avgResponseTime: number;
+  };
 }
