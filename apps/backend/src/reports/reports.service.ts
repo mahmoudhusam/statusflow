@@ -1,4 +1,3 @@
-// File: apps/backend/src/reports/reports.service.ts
 
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -63,7 +62,7 @@ export class ReportsService {
     const monitors = await this.monitorRepository.find({
       where: {
         id: In(monitorIds),
-        userId,
+        user: { id: userId },
       },
     });
 
@@ -116,14 +115,14 @@ export class ReportsService {
     });
 
     const totalChecks = checkResults.length;
-    const successfulChecks = checkResults.filter((r) => r.success).length;
+    const successfulChecks = checkResults.filter((r) => r.isUp).length;
     const failedChecks = totalChecks - successfulChecks;
     const uptimePercentage =
       totalChecks > 0 ? (successfulChecks / totalChecks) * 100 : 0;
 
     // Calculate response time statistics
     const responseTimes = checkResults
-      .filter((r) => r.success && r.responseTime !== null)
+      .filter((r) => r.isUp && r.responseTime !== null)
       .map((r) => r.responseTime);
 
     const avgResponseTime =
@@ -142,10 +141,7 @@ export class ReportsService {
     const p99ResponseTime = this.calculatePercentile(sortedResponseTimes, 99);
 
     // Calculate downtime
-    const downtime = this.calculateDowntime(
-      checkResults,
-      monitor.checkInterval,
-    );
+    const downtime = this.calculateDowntime(checkResults);
 
     return {
       monitorId: monitor.id,
@@ -180,10 +176,10 @@ export class ReportsService {
   /**
    * Calculate downtime from check results
    */
-  private calculateDowntime(
-    checkResults: CheckResult[],
-    checkInterval: number,
-  ): { totalMinutes: number; incidents: number } {
+  private calculateDowntime(checkResults: CheckResult[]): {
+    totalMinutes: number;
+    incidents: number;
+  } {
     let totalMinutes = 0;
     let incidents = 0;
     let currentIncidentStart: Date | null = null;
@@ -191,11 +187,11 @@ export class ReportsService {
     for (let i = 0; i < checkResults.length; i++) {
       const result = checkResults[i];
 
-      if (!result.success && currentIncidentStart === null) {
+      if (!result.isUp && currentIncidentStart === null) {
         // Start of a new incident
         currentIncidentStart = result.createdAt;
         incidents++;
-      } else if (result.success && currentIncidentStart !== null) {
+      } else if (result.isUp && currentIncidentStart !== null) {
         // End of an incident
         const incidentDuration =
           (result.createdAt.getTime() - currentIncidentStart.getTime()) /

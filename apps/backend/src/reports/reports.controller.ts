@@ -3,7 +3,6 @@ import {
   Post,
   Body,
   UseGuards,
-  Req,
   Res,
   HttpStatus,
 } from '@nestjs/common';
@@ -14,6 +13,7 @@ import {
   ApiResponse,
 } from '@nestjs/swagger';
 import { JwtGuard } from '../auth/guard/jwt.guard';
+import { GetUser } from '../auth/decorators';
 import { ReportsService } from './reports.service';
 import { GenerateReportDto } from './dto/generate-report.dto';
 import { Response } from 'express';
@@ -36,10 +36,9 @@ export class ReportsController {
     description: 'One or more monitors not found',
   })
   async generateReport(
-    @Req() req: any,
+    @GetUser('id') userId: string,
     @Body() generateReportDto: GenerateReportDto,
   ) {
-    const userId = req.user.userId;
     return await this.reportsService.generateReport(userId, generateReportDto);
   }
 
@@ -50,12 +49,10 @@ export class ReportsController {
     description: 'CSV file generated successfully',
   })
   async exportCsv(
-    @Req() req: any,
+    @GetUser('id') userId: string,
     @Body() generateReportDto: GenerateReportDto,
     @Res() res: Response,
   ) {
-    s;
-    const userId = req.user.userId;
     const csvContent = await this.reportsService.exportCsv(
       userId,
       generateReportDto,
@@ -78,11 +75,10 @@ export class ReportsController {
     description: 'JSON file generated successfully',
   })
   async exportJson(
-    @Req() req: any,
+    @GetUser('id') userId: string,
     @Body() generateReportDto: GenerateReportDto,
     @Res() res: Response,
   ) {
-    const userId = req.user.userId;
     const reportData = await this.reportsService.exportJson(
       userId,
       generateReportDto,
