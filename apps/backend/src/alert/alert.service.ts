@@ -1,8 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import * as nodemailer from 'nodemailer';
 import { ConfigService } from '@nestjs/config';
-import { Monitor } from '../monitor/monitor.entity';
-import { CheckResult } from '../check-result/check-result.entity';
+import { Monitor } from '@/monitor/monitor.entity';
+import { CheckResult } from '@/check-result/check-result.entity';
 
 export class AlertRule {
   consecutiveFailures: number;

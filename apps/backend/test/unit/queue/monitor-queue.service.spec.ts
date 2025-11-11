@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getQueueToken } from '@nestjs/bullmq';
-import { MonitorQueueService } from './monitor-queue.service';
-import { Monitor } from '../monitor/monitor.entity';
+import { MonitorQueueService } from '@/queue/monitor-queue.service';
+import { Monitor } from '@/monitor/monitor.entity';
 
 // Create src/queue/monitor-queue.service.spec.ts
 describe('MonitorQueueService', () => {

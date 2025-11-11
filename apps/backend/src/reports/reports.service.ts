@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In, Between } from 'typeorm';
-import { Monitor } from '../monitor/monitor.entity';
-import { CheckResult } from '../check-result/check-result.entity';
+import { Monitor } from '@/monitor/monitor.entity';
+import { CheckResult } from '@/check-result/check-result.entity';
 import {
   GenerateReportDto,
   ReportData,

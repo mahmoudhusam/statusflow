@@ -1,12 +1,12 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { HttpService } from '@nestjs/axios';
-import { MonitorProcessor } from './monitor.processor';
-import { Monitor } from '../monitor/monitor.entity';
-import { CheckResult } from '../check-result/check-result.entity';
-import { AlertService } from '../alert/alert.service';
+import { MonitorProcessor } from '@/queue/monitor.processor';
+import { Monitor } from '@/monitor/monitor.entity';
+import { CheckResult } from '@/check-result/check-result.entity';
+import { AlertService } from '@/alert/alert.service';
 import { Job } from 'bullmq';
-import { MonitorCheckJobData } from './monitor-queue.service';
+import { MonitorCheckJobData } from '@/queue/monitor-queue.service';
 import { AxiosError } from 'axios';
 
 describe('MonitorProcessor', () => {

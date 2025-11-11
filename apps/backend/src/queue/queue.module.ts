@@ -4,10 +4,10 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MonitorQueueService } from './monitor-queue.service';
 import { MonitorProcessor } from './monitor.processor';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { Monitor } from '../monitor/monitor.entity';
-import { CheckResult } from '../check-result/check-result.entity';
+import { Monitor } from '@/monitor/monitor.entity';
+import { CheckResult } from '@/check-result/check-result.entity';
 import { HttpModule } from '@nestjs/axios';
-import { AlertModule } from 'src/alert/alert.module';
+import { AlertModule } from '@/alert/alert.module';
 
 @Module({
   imports: [

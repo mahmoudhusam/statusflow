@@ -8,8 +8,8 @@ import {
   Res,
   HttpStatus,
 } from '@nestjs/common';
-import { JwtGuard } from '../auth/guard';
-import { GetUser } from '../auth/decorators';
+import { JwtGuard } from '@/auth/guard';
+import { GetUser } from '@/auth/decorators';
 import { Response } from 'express';
 import { ReportsService } from './reports.service';
 import { GenerateReportDto, ReportData } from './dto/generate-report.dto';

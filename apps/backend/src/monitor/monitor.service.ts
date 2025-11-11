@@ -7,9 +7,9 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Monitor } from './monitor.entity';
 import { Between, Repository } from 'typeorm';
-import { CheckResult } from '../check-result/check-result.entity';
-import { User } from '../user/user.entity';
-import { MonitorQueueService } from '../queue/monitor-queue.service';
+import { CheckResult } from '@/check-result/check-result.entity';
+import { User } from '@/user/user.entity';
+import { MonitorQueueService } from '@/queue/monitor-queue.service';
 
 @Injectable()
 export class MonitorService {

@@ -1,17 +1,17 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { AuthModule } from './auth/auth.module';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
-import { MonitorModule } from './monitor/monitor.module';
-import { UserModule } from './user/user.module';
-import { CheckResultModule } from './check-result/check-result.module';
+import { AuthModule } from '@/auth/auth.module';
+import { AppController } from '@/app.controller';
+import { AppService } from '@/app.service';
+import { MonitorModule } from '@/monitor/monitor.module';
+import { UserModule } from '@/user/user.module';
+import { CheckResultModule } from '@/check-result/check-result.module';
 import { ScheduleModule } from '@nestjs/schedule';
-import { AlertService } from './alert/alert.service';
-import { AlertModule } from './alert/alert.module';
-import { QueueModule } from './queue/queue.module';
-import { ReportsModule } from './reports/reports.module';
+import { AlertService } from '@/alert/alert.service';
+import { AlertModule } from '@/alert/alert.module';
+import { QueueModule } from '@/queue/queue.module';
+import { ReportsModule } from '@/reports/reports.module';
 
 @Module({
   imports: [

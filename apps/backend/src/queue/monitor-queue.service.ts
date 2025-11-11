@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
-import { Monitor } from '../monitor/monitor.entity';
+import { Monitor } from '@/monitor/monitor.entity';
 
 export interface MonitorCheckJobData {
   monitorId: string;

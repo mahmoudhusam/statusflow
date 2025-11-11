@@ -1,11 +1,11 @@
 import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { CheckResult } from '../check-result/check-result.entity';
+import { CheckResult } from '@/check-result/check-result.entity';
 import { LessThan, Repository } from 'typeorm';
 import { HttpService } from '@nestjs/axios';
-import { AlertService } from '../alert/alert.service';
-import { Monitor } from '../monitor/monitor.entity';
+import { AlertService } from '@/alert/alert.service';
+import { Monitor } from '@/monitor/monitor.entity';
 import { AxiosError } from 'axios';
 import { Job } from 'bullmq';
 import { MonitorCheckJobData } from './monitor-queue.service';

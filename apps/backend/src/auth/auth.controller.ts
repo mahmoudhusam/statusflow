@@ -11,7 +11,7 @@ import { AuthService } from './auth.service';
 import { AuthDto } from './dto';
 import { JwtGuard } from './guard';
 import { GetUser } from './decorators';
-import { User } from '../user/user.entity';
+import { User } from '@/user/user.entity';
 
 @Controller('auth')
 export class AuthController {
