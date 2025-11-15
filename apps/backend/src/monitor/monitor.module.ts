@@ -3,10 +3,10 @@ import { MonitorService } from './monitor.service';
 import { MonitorController } from './monitor.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { HttpModule } from '@nestjs/axios';
-import { CheckResult } from '../check-result/check-result.entity';
+import { CheckResult } from '@/check-result/check-result.entity';
 import { Monitor } from './monitor.entity';
-import { QueueModule } from '../queue/queue.module';
-import { AlertModule } from '../alert/alert.module';
+import { QueueModule } from '@/queue/queue.module';
+import { AlertModule } from '@/alert/alert.module';
 
 @Module({
   imports: [

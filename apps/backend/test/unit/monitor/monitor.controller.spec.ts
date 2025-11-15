@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { MonitorController } from './monitor.controller';
-import { MonitorService } from './monitor.service';
-import { CreateMonitorDto, UpdateMonitorDto } from './dto';
+import { MonitorController } from '@/monitor/monitor.controller';
+import { MonitorService } from '@/monitor/monitor.service';
+import { CreateMonitorDto, UpdateMonitorDto } from '@/monitor/dto';
 import { NotFoundException } from '@nestjs/common';
 
 describe('MonitorController', () => {

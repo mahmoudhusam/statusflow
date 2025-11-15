@@ -1,8 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigService } from '@nestjs/config';
-import { AlertService } from './alert.service';
-import { Monitor } from '../monitor/monitor.entity';
-import { CheckResult } from '../check-result/check-result.entity';
+import { AlertService } from '@/alert/alert.service';
+import { Monitor } from '@/monitor/monitor.entity';
+import { CheckResult } from '@/check-result/check-result.entity';
 import * as nodemailer from 'nodemailer';
 import 'jest-extended';
 

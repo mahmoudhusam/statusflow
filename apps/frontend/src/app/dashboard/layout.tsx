@@ -65,6 +65,31 @@ export default function DashboardLayout({
                       Monitors
                     </div>
                   </Link>
+                  <Link
+                    href="/dashboard/reports"
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                      pathname?.startsWith('/dashboard/reports')
+                        ? 'bg-blue-50 text-blue-700'
+                        : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M9 17v1a1 1 0 001 1h4a1 1 0 001-1v-1m3-2V8a2 2 0 00-2-2H8a2 2 0 00-2 2v8m5 -2h2m2-2H9"
+                        />
+                      </svg>
+                      Reports
+                    </div>
+                  </Link>
                 </div>
               </div>
 
@@ -155,6 +180,32 @@ export default function DashboardLayout({
                       />
                     </svg>
                     Monitors
+                  </div>
+                </Link>
+                <Link
+                  href="/dashboard/reports"
+                  className={`block px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
+                    pathname?.startsWith('/dashboard/reports')
+                      ? 'bg-blue-50 text-blue-700'
+                      : 'text-gray-600 hover:bg-gray-50'
+                  }`}
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <div className="flex items-center gap-2">
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 17v1a1 1 0 001 1h4a1 1 0 001-1v-1m3-2V8a2 2 0 00-2-2H8a2 2 0 00-2 2v8m5 -2h2m2-2H9"
+                      />
+                    </svg>
+                    Reports
                   </div>
                 </Link>
                 <div className="px-4 py-2 text-sm text-gray-600 bg-gray-50 rounded-lg">

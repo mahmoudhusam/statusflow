@@ -1,18 +1,14 @@
 'use client';
 
-import { useState, useMemo, useCallback } from 'react';
-import type {
-  Monitor,
-  CheckResult,
-  TimeRange,
-  MonitorStats,
-} from '@/types/monitor';
+import { useState, useMemo, useCallback, useEffect } from 'react';
+import type { Monitor, TimeRange, MonitorStats } from '@/types/monitor';
 import { formatRelative } from 'date-fns/formatRelative';
 import Link from 'next/link';
 import { SkeletonLoader } from '@/components/ui/SkeletonLoader';
 import { ErrorDisplay } from '@/components/ui/ErrorDisplay';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
-import { useAsyncData, simulateApiCall } from '@/hooks/useAsyncData';
+import { useAuth } from '@/contexts/AuthContext';
+import { monitorsApi } from '@/lib/api/monitors';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -41,114 +37,29 @@ interface MonitorDetailsComponentProps {
   monitor: Monitor;
 }
 
-// Helper function to generate mock check results for demonstration
-async function fetchCheckResults(
-  monitorId: string,
-  timeRange: TimeRange
-): Promise<CheckResult[]> {
-  const now = new Date();
-  const results: CheckResult[] = [];
-
-  let hoursBack = 1;
-  let intervalMinutes = 1;
-
-  switch (timeRange) {
-    case '1h':
-      hoursBack = 1;
-      intervalMinutes = 1;
-      break;
-    case '24h':
-      hoursBack = 24;
-      intervalMinutes = 5;
-      break;
-    case '7d':
-      hoursBack = 24 * 7;
-      intervalMinutes = 30;
-      break;
-    case '30d':
-      hoursBack = 24 * 30;
-      intervalMinutes = 120;
-      break;
-  }
-
-  const totalMinutesBack = hoursBack * 60;
-  const checks = Math.floor(totalMinutesBack / intervalMinutes);
-
-  for (let i = 0; i < checks; i++) {
-    const timestamp = new Date(now.getTime() - i * intervalMinutes * 60 * 1000);
-    const seed = monitorId.charCodeAt(0) + i;
-    const isUp = seed % 7 !== 0;
-    const baseLatency = 100 + (seed % 200);
-    const latency = isUp ? baseLatency + Math.random() * 100 : undefined;
-
-    results.push({
-      id: `check-${i}`,
-      timestamp: timestamp.toISOString(),
-      status: isUp ? 'UP' : 'DOWN',
-      statusCode: isUp ? (seed % 2 === 0 ? 200 : 201) : 400 + (seed % 100),
-      responseTimeMs: latency ? Math.round(latency) : undefined,
-      errorMessage: isUp ? undefined : 'Connection timeout',
-    });
-  }
-
-  // Simulate API call
-  return simulateApiCall(results.reverse(), {
-    delay: 600,
-    // Uncomment to test error handling
-    // shouldFail: true
-  });
+interface MetricData {
+  timestamp: string;
+  uptime?: number | null;
+  avgResponseTime?: number | null;
+  p95ResponseTime?: number | null;
+  totalChecks?: number;
+  errors?: number;
 }
 
-// Calculate monitor statistics from check results
-function calculateStats(checkResults: CheckResult[]): MonitorStats {
-  const totalChecks = checkResults.length;
-  const upChecks = checkResults.filter((r) => r.status === 'UP').length;
-  const errorCount = totalChecks - upChecks;
-
-  const uptimePercentage = totalChecks > 0 ? (upChecks / totalChecks) * 100 : 0;
-
-  const responseTimes = checkResults
-    .filter((r) => r.responseTimeMs !== undefined)
-    .map((r) => r.responseTimeMs!)
-    .sort((a, b) => a - b);
-
-  const averageLatency =
-    responseTimes.length > 0
-      ? responseTimes.reduce((sum, time) => sum + time, 0) /
-        responseTimes.length
-      : 0;
-
-  const p95Index = Math.ceil(responseTimes.length * 0.95) - 1;
-  const p95Latency =
-    responseTimes.length > 0 ? responseTimes[p95Index] || 0 : 0;
-
-  return {
-    uptimePercentage: Math.round(uptimePercentage * 100) / 100,
-    averageLatency: Math.round(averageLatency),
-    p95Latency: Math.round(p95Latency),
-    errorCount,
-    totalChecks,
+interface MetricsResponse {
+  metrics?: MetricData[];
+  summary?: {
+    totalUptime: number;
+    avgResponseTime: number;
+    totalChecks: number;
+    totalErrors: number;
   };
 }
 
-// Prepare chart data from check results
-function prepareChartData(checkResults: CheckResult[], timeRange: TimeRange) {
-  if (!checkResults.length) {
+// Prepare chart data from metrics API response
+function prepareChartData(metricsData: MetricsResponse | null) {
+  if (!metricsData?.metrics || metricsData.metrics.length === 0) {
     return { uptimeData: null, latencyData: null };
-  }
-
-  const groupSize =
-    timeRange === '1h'
-      ? 6
-      : timeRange === '24h'
-        ? 12
-        : timeRange === '7d'
-          ? 24
-          : 48;
-  const groups: CheckResult[][] = [];
-
-  for (let i = 0; i < checkResults.length; i += groupSize) {
-    groups.push(checkResults.slice(i, i + groupSize));
   }
 
   const labels: string[] = [];
@@ -156,57 +67,17 @@ function prepareChartData(checkResults: CheckResult[], timeRange: TimeRange) {
   const avgLatencies: number[] = [];
   const p95Latencies: number[] = [];
 
-  groups.forEach((group) => {
-    if (group.length === 0) return;
-
-    const firstCheck = group[0];
-    const upCount = group.filter((r) => r.status === 'UP').length;
-    const uptimePercentage = (upCount / group.length) * 100;
-
-    const latencies = group
-      .filter((r) => r.responseTimeMs !== undefined)
-      .map((r) => r.responseTimeMs!);
-
-    const avgLatency =
-      latencies.length > 0
-        ? latencies.reduce((sum, lat) => sum + lat, 0) / latencies.length
-        : 0;
-
-    const sortedLatencies = [...latencies].sort((a, b) => a - b);
-    const p95Index = Math.ceil(sortedLatencies.length * 0.95) - 1;
-    const p95Latency =
-      sortedLatencies.length > 0 ? sortedLatencies[p95Index] || 0 : 0;
-
-    const date = new Date(firstCheck.timestamp);
-    let label = '';
-
-    if (timeRange === '1h') {
-      label = date.toLocaleTimeString('en-US', {
-        hour: '2-digit',
-        minute: '2-digit',
-      });
-    } else if (timeRange === '24h') {
-      label = date.toLocaleTimeString('en-US', {
-        hour: '2-digit',
-        minute: '2-digit',
-      });
-    } else if (timeRange === '7d') {
-      label = date.toLocaleDateString('en-US', {
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-      });
-    } else {
-      label = date.toLocaleDateString('en-US', {
-        month: 'short',
-        day: 'numeric',
-      });
-    }
+  metricsData.metrics.forEach((metric: MetricData) => {
+    const date = new Date(metric.timestamp);
+    const label = date.toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+    });
 
     labels.push(label);
-    uptimePercentages.push(Math.round(uptimePercentage * 100) / 100);
-    avgLatencies.push(Math.round(avgLatency));
-    p95Latencies.push(Math.round(p95Latency));
+    uptimePercentages.push(metric.uptime || 0);
+    avgLatencies.push(metric.avgResponseTime || 0);
+    p95Latencies.push(metric.p95ResponseTime || 0);
   });
 
   const uptimeData = {
@@ -255,8 +126,16 @@ function prepareChartData(checkResults: CheckResult[], timeRange: TimeRange) {
 export function MonitorDetailsComponent({
   monitor,
 }: MonitorDetailsComponentProps) {
+  const { token } = useAuth();
   const [selectedTimeRange, setSelectedTimeRange] = useState<TimeRange>('24h');
   const [refreshKey, setRefreshKey] = useState(0);
+  const [metricsData, setMetricsData] = useState<MetricsResponse | null>(null);
+  const [isLoadingMetrics, setIsLoadingMetrics] = useState(false);
+  const [metricsError, setMetricsError] = useState<Error | null>(null);
+  const [latestCheckResult, setLatestCheckResult] = useState<{
+    status: string;
+    responseTime?: number;
+  } | null>(null);
 
   const timeRangeOptions: {
     value: TimeRange;
@@ -269,48 +148,107 @@ export function MonitorDetailsComponent({
     { value: '30d', label: 'Last 30 Days', description: 'Past month' },
   ];
 
-  // Fetch check results with loading and error handling
-  const fetchCheckResultsFn = useCallback(
-    () => fetchCheckResults(monitor.id, selectedTimeRange),
-    [monitor.id, selectedTimeRange]
-  );
+  // Fetch metrics data
+  useEffect(() => {
+    const fetchMetrics = async () => {
+      if (!token) return;
 
-  const {
-    data: checkResults,
-    loading: isLoadingMetrics,
-    error: metricsError,
-    retry: retryMetrics,
-  } = useAsyncData<CheckResult[]>(
-    fetchCheckResultsFn,
-    [selectedTimeRange, refreshKey],
-    {
-      simulateDelay: 600,
-      simulateErrorRate: 0, // Set to 0.2 to test error handling
-      retryCount: 3,
-      retryDelay: 1000,
+      try {
+        setIsLoadingMetrics(true);
+        setMetricsError(null);
+
+        // Calculate time range
+        const now = new Date();
+        const from = new Date();
+
+        switch (selectedTimeRange) {
+          case '1h':
+            from.setHours(now.getHours() - 1);
+            break;
+          case '24h':
+            from.setHours(now.getHours() - 24);
+            break;
+          case '7d':
+            from.setDate(now.getDate() - 7);
+            break;
+          case '30d':
+            from.setDate(now.getDate() - 30);
+            break;
+        }
+
+        const data = await monitorsApi.getMonitorMetrics(
+          monitor.id,
+          { from, to: now, interval: selectedTimeRange === '1h' ? '1m' : '1h' },
+          token
+        );
+        setMetricsData(data as MetricsResponse);
+
+        // Get the latest check result from the metrics data
+        if (data?.metrics && data.metrics.length > 0) {
+          const latest = data.metrics[data.metrics.length - 1];
+          setLatestCheckResult({
+            status: (latest.uptime || 0) > 0 ? 'UP' : 'DOWN',
+            responseTime: latest.avgResponseTime || undefined,
+          });
+        }
+      } catch (error) {
+        console.error('Failed to fetch metrics:', error);
+        setMetricsError(
+          error instanceof Error ? error : new Error('Failed to fetch metrics')
+        );
+      } finally {
+        setIsLoadingMetrics(false);
+      }
+    };
+
+    fetchMetrics();
+  }, [monitor.id, selectedTimeRange, refreshKey, token]);
+
+  const stats: MonitorStats | null = useMemo(() => {
+    if (!metricsData?.summary) return null;
+
+    // Calculate p95 from the p95ResponseTime values already provided by backend
+    // Use the maximum p95 value across all time buckets as the overall p95
+    let p95Latency = 0;
+    if (metricsData?.metrics && metricsData.metrics.length > 0) {
+      const p95Values = metricsData.metrics
+        .map((metric) => metric.p95ResponseTime)
+        .filter(
+          (time): time is number =>
+            time !== null && time !== undefined && time > 0
+        );
+
+      if (p95Values.length > 0) {
+        // Take the maximum p95 value across all buckets
+        // This represents the worst-case 95th percentile latency
+        p95Latency = Math.round(Math.max(...p95Values));
+      }
     }
-  );
 
-  const stats = useMemo(
-    () => (checkResults ? calculateStats(checkResults) : null),
-    [checkResults]
-  );
+    return {
+      uptimePercentage: metricsData.summary.totalUptime || 0,
+      averageLatency: Math.round(metricsData.summary.avgResponseTime || 0),
+      p95Latency,
+      errorCount: metricsData.summary.totalErrors || 0,
+      totalChecks: metricsData.summary.totalChecks || 0,
+    };
+  }, [metricsData]);
 
   const { uptimeData, latencyData } = useMemo(
-    () =>
-      checkResults
-        ? prepareChartData(checkResults, selectedTimeRange)
-        : { uptimeData: null, latencyData: null },
-    [checkResults, selectedTimeRange]
+    () => prepareChartData(metricsData),
+    [metricsData]
   );
 
   const lastChecked = monitor.lastCheckedAt
     ? formatRelative(new Date(monitor.lastCheckedAt), new Date())
     : 'Never checked';
 
-  const isUp = monitor.id.charCodeAt(0) % 2 === 0;
+  const isUp =
+    monitor.latestStatus?.isUp ||
+    (latestCheckResult && latestCheckResult.status === 'UP') ||
+    false;
 
-  // Chart options
+  // Chart options with TypeScript fixes
   const uptimeChartOptions: ChartOptions<'line'> = {
     responsive: true,
     maintainAspectRatio: false,
@@ -334,7 +272,11 @@ export function MonitorDetailsComponent({
         bodyColor: 'white',
         callbacks: {
           label: function (context) {
-            return `Uptime: ${context.parsed.y.toFixed(2)}%`;
+            const value = context.parsed.y;
+            if (typeof value === 'number') {
+              return `Uptime: ${value.toFixed(2)}%`;
+            }
+            return 'Uptime: N/A';
           },
         },
       },
@@ -391,7 +333,12 @@ export function MonitorDetailsComponent({
         bodyColor: 'white',
         callbacks: {
           label: function (context) {
-            return `${context.dataset.label}: ${context.parsed.y}ms`;
+            const value = context.parsed.y;
+            const label = context.dataset.label || '';
+            if (typeof value === 'number') {
+              return `${label}: ${value}ms`;
+            }
+            return `${label}: N/A`;
           },
         },
       },
@@ -431,6 +378,10 @@ export function MonitorDetailsComponent({
     setRefreshKey((prev) => prev + 1);
   };
 
+  const retryMetrics = useCallback(() => {
+    setRefreshKey((prev) => prev + 1);
+  }, []);
+
   return (
     <div className="container mx-auto px-4 py-8 bg-gray-50">
       {/* Breadcrumb */}
@@ -456,9 +407,7 @@ export function MonitorDetailsComponent({
               )}
             </h1>
             <div className="flex items-center gap-4">
-              <span className="text-gray-600  font-mono">
-                {monitor.url}
-              </span>
+              <span className="text-gray-600  font-mono">{monitor.url}</span>
               <span
                 className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-semibold ${
                   isUp
@@ -496,9 +445,7 @@ export function MonitorDetailsComponent({
         <div className="bg-white border border-gray-200 p-6 rounded-xl shadow-sm">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
             <div>
-              <span className="font-medium text-gray-500 ">
-                Created:
-              </span>
+              <span className="font-medium text-gray-500 ">Created:</span>
               <div className="text-gray-900 ">
                 {monitor.createdAt
                   ? new Date(monitor.createdAt).toLocaleDateString()
@@ -506,28 +453,20 @@ export function MonitorDetailsComponent({
               </div>
             </div>
             <div>
-              <span className="font-medium text-gray-500 ">
-                Method:
-              </span>
+              <span className="font-medium text-gray-500 ">Method:</span>
               <div className="text-gray-900  font-mono">
                 {monitor.httpMethod || 'GET'}
               </div>
             </div>
             <div>
-              <span className="font-medium text-gray-500 ">
-                Interval:
-              </span>
+              <span className="font-medium text-gray-500 ">Interval:</span>
               <div className="text-gray-900 ">
                 {monitor.interval ? `${monitor.interval}s` : 'Default'}
               </div>
             </div>
             <div>
-              <span className="font-medium text-gray-500 ">
-                Last Check:
-              </span>
-              <div className="text-gray-900 ">
-                {lastChecked}
-              </div>
+              <span className="font-medium text-gray-500 ">Last Check:</span>
+              <div className="text-gray-900 ">{lastChecked}</div>
             </div>
           </div>
         </div>
@@ -691,7 +630,7 @@ export function MonitorDetailsComponent({
                 {stats.p95Latency}ms
               </div>
               <div className="text-xs text-gray-500  mt-1">
-                95% of requests faster than
+                Worst-case 95th percentile
               </div>
             </div>
 
@@ -723,88 +662,6 @@ export function MonitorDetailsComponent({
         ) : null}
       </div>
 
-      {/* Recent Check Results */}
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-        <div className="px-6 py-5 border-b border-gray-200 bg-gray-50">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-lg font-semibold text-gray-900 ">
-                Recent Checks
-              </h2>
-              {checkResults && !metricsError && (
-                <p className="text-sm text-gray-500 ">
-                  Showing last {Math.min(10, checkResults.length)} checks from{' '}
-                  {timeRangeOptions
-                    .find((opt) => opt.value === selectedTimeRange)
-                    ?.description.toLowerCase()}
-                </p>
-              )}
-            </div>
-            {isLoadingMetrics && <LoadingSpinner size="small" message="" />}
-          </div>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50 border-b border-gray-200">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500  uppercase tracking-wider">
-                  Time
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500  uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500  uppercase tracking-wider">
-                  Response Time
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500  uppercase tracking-wider">
-                  Status Code
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {isLoadingMetrics ? (
-                <>
-                  <SkeletonLoader variant="row" count={5} />
-                </>
-              ) : checkResults && !metricsError ? (
-                checkResults
-                  .slice(-10)
-                  .reverse()
-                  .map((result) => (
-                    <tr
-                      key={result.id}
-                      className="hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-0"
-                    >
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 ">
-                        {new Date(result.timestamp).toLocaleString()}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span
-                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                            result.status === 'UP'
-                              ? 'bg-green-100 text-green-800'
-                              : 'bg-red-100 text-red-800'
-                          }`}
-                        >
-                          {result.status}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 ">
-                        {result.responseTimeMs
-                          ? `${result.responseTimeMs}ms`
-                          : '-'}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-900 ">
-                        {result.statusCode || '-'}
-                      </td>
-                    </tr>
-                  ))
-              ) : null}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
       {/* Configuration Details */}
       <div className="mt-8 bg-white rounded-xl border border-gray-200 shadow-sm">
         <div className="px-6 py-5 border-b border-gray-200 bg-gray-50">
@@ -826,9 +683,7 @@ export function MonitorDetailsComponent({
                   </dd>
                 </div>
                 <div className="flex justify-between">
-                  <dt className="text-gray-500 ">
-                    Max Latency:
-                  </dt>
+                  <dt className="text-gray-500 ">Max Latency:</dt>
                   <dd className="text-gray-900 ">
                     {monitor.maxLatencyMs
                       ? `${monitor.maxLatencyMs}ms`
@@ -836,9 +691,7 @@ export function MonitorDetailsComponent({
                   </dd>
                 </div>
                 <div className="flex justify-between">
-                  <dt className="text-gray-500 ">
-                    Max Failures:
-                  </dt>
+                  <dt className="text-gray-500 ">Max Failures:</dt>
                   <dd className="text-gray-900 ">
                     {monitor.maxConsecutiveFailures || 'Not set'}
                   </dd>
@@ -847,9 +700,7 @@ export function MonitorDetailsComponent({
             </div>
 
             <div>
-              <h3 className="font-medium text-gray-900  mb-3">
-                Timestamps
-              </h3>
+              <h3 className="font-medium text-gray-900  mb-3">Timestamps</h3>
               <dl className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <dt className="text-gray-500 ">Created:</dt>
@@ -860,9 +711,7 @@ export function MonitorDetailsComponent({
                   </dd>
                 </div>
                 <div className="flex justify-between">
-                  <dt className="text-gray-500 ">
-                    Last Updated:
-                  </dt>
+                  <dt className="text-gray-500 ">Last Updated:</dt>
                   <dd className="text-gray-900 ">
                     {monitor.updatedAt
                       ? new Date(monitor.updatedAt).toLocaleString()
@@ -882,12 +731,8 @@ export function MonitorDetailsComponent({
               <div className="bg-gray-50 p-3 rounded text-sm">
                 {Object.entries(monitor.headers).map(([key, value]) => (
                   <div key={key} className="flex gap-2">
-                    <span className="font-mono text-gray-600 ">
-                      {key}:
-                    </span>
-                    <span className="font-mono text-gray-900 ">
-                      {value}
-                    </span>
+                    <span className="font-mono text-gray-600 ">{key}:</span>
+                    <span className="font-mono text-gray-900 ">{value}</span>
                   </div>
                 ))}
               </div>
@@ -896,9 +741,7 @@ export function MonitorDetailsComponent({
 
           {monitor.body && (
             <div className="mt-6">
-              <h3 className="font-medium text-gray-900  mb-3">
-                Request Body
-              </h3>
+              <h3 className="font-medium text-gray-900  mb-3">Request Body</h3>
               <pre className="bg-gray-50 p-3 rounded text-sm font-mono text-gray-800  overflow-x-auto">
                 {monitor.body}
               </pre>

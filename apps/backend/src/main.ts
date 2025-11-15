@@ -7,6 +7,12 @@ import { ExpressAdapter } from '@bull-board/express';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  app.enableCors({
+    origin: process.env.FRONTEND_URL || 'http://localhost:3001',
+    credentials: true,
+  });
+
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -37,6 +43,9 @@ async function bootstrap() {
       '🎯 Bull Dashboard available at: http://localhost:3000/admin/queues',
     );
   }
-  await app.listen(process.env.PORT ?? 3000);
+
+  const port = process.env.PORT || 3000;
+  await app.listen(port);
+  console.log(`🚀 Backend running on http://localhost:${port}`);
 }
 bootstrap();

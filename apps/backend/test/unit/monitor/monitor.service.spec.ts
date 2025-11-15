@@ -1,11 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { HttpService } from '@nestjs/axios';
-import { MonitorService } from './monitor.service';
-import { Monitor } from './monitor.entity';
-import { CheckResult } from '../check-result/check-result.entity';
+import { MonitorService } from '@/monitor/monitor.service';
+import { Monitor } from '@/monitor/monitor.entity';
+import { CheckResult } from '@/check-result/check-result.entity';
 import { NotFoundException } from '@nestjs/common';
-import { MonitorQueueService } from '../queue/monitor-queue.service';
+import { MonitorQueueService } from '@/queue/monitor-queue.service';
 
 describe('MonitorService', () => {
   let service: MonitorService;

@@ -1,5 +1,3 @@
-// apps/frontend/src/lib/api-client.ts
-
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 
 export class ApiError extends Error {
@@ -13,17 +11,31 @@ export class ApiError extends Error {
   }
 }
 
+interface ErrorResponse {
+  message?: string;
+  errors?: Record<string, string[]>;
+}
+
 async function handleResponse<T>(response: Response): Promise<T> {
   if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new ApiError(
-      errorData.message || 'An error occurred',
+    let errorData: ErrorResponse = {};
+    try {
+      errorData = (await response.json()) as ErrorResponse;
+    } catch {
+      errorData = { message: response.statusText || 'An error occurred' };
+    }
+
+    const error = new ApiError(
+      errorData.message || `Error ${response.status}: ${response.statusText}`,
       response.status,
       errorData.errors
     );
+
+    throw error;
   }
 
-  return response.json();
+  const text = await response.text();
+  return text ? JSON.parse(text) : ({} as T);
 }
 
 export const apiClient = {

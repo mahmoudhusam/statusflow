@@ -4,15 +4,19 @@ import type { Monitor } from '@/types/monitor';
 
 interface MonitorCardProps {
   monitor: Monitor;
-  onRefresh?: (monitorId: string) => Promise<void>;
 }
 
 export function MonitorCard({ monitor }: MonitorCardProps) {
-  const lastChecked = monitor.lastCheckedAt
-    ? formatRelative(new Date(monitor.lastCheckedAt), new Date())
-    : 'Never checked';
+  // Use real latest status from backend
+  const latestStatus = monitor.latestStatus;
+  const isUp = latestStatus?.isUp ?? false;
+  const hasData = !!latestStatus;
 
-  const isUp = monitor.id.charCodeAt(0) % 2 === 0;
+  const lastChecked = latestStatus?.checkedAt
+    ? formatRelative(new Date(latestStatus.checkedAt), new Date())
+    : monitor.lastCheckedAt
+      ? formatRelative(new Date(monitor.lastCheckedAt), new Date())
+      : 'Never checked';
 
   return (
     <Link
@@ -40,44 +44,67 @@ export function MonitorCard({ monitor }: MonitorCardProps) {
 
         {/* Status Badge */}
         <div className="ml-3 flex-shrink-0">
-          <span
-            className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${
-              isUp
-                ? 'bg-green-50 text-green-700 ring-1 ring-green-600/20'
-                : 'bg-red-50 text-red-700 ring-1 ring-red-600/20'
-            }`}
-          >
+          {hasData ? (
             <span
-              className={`w-1.5 h-1.5 rounded-full mr-1.5 ${
-                isUp ? 'bg-green-500' : 'bg-red-500'
+              className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${
+                isUp
+                  ? 'bg-green-50 text-green-700 ring-1 ring-green-600/20'
+                  : 'bg-red-50 text-red-700 ring-1 ring-red-600/20'
               }`}
-            ></span>
-            {isUp ? 'UP' : 'DOWN'}
-          </span>
+            >
+              <span
+                className={`w-1.5 h-1.5 rounded-full mr-1.5 ${
+                  isUp ? 'bg-green-500 animate-pulse' : 'bg-red-500'
+                }`}
+              ></span>
+              {isUp ? 'UP' : 'DOWN'}
+            </span>
+          ) : (
+            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-gray-50 text-gray-600 ring-1 ring-gray-600/20">
+              <span className="w-1.5 h-1.5 rounded-full mr-1.5 bg-gray-400"></span>
+              PENDING
+            </span>
+          )}
         </div>
       </div>
 
       {/* Metrics */}
       <div className="grid grid-cols-2 gap-3 mb-4">
-        {monitor.lastResponseTimeMs != null && (
+        {latestStatus?.responseTime != null && (
           <div className="bg-blue-50 rounded-lg px-3 py-2">
             <div className="text-xs text-blue-600 font-medium mb-1">
               Response Time
             </div>
             <div className="text-lg font-bold text-blue-700">
-              {monitor.lastResponseTimeMs}ms
+              {latestStatus.responseTime}ms
             </div>
           </div>
         )}
-        {monitor.lastStatusCode != null && (
+        {latestStatus?.status != null && (
           <div className="bg-gray-50 rounded-lg px-3 py-2">
             <div className="text-xs text-gray-600 font-medium mb-1">
               Status Code
             </div>
             <div className="text-lg font-bold text-gray-700 font-mono">
-              {monitor.lastStatusCode}
+              {latestStatus.status}
             </div>
           </div>
+        )}
+        {!hasData && (
+          <>
+            <div className="bg-gray-50 rounded-lg px-3 py-2 animate-pulse">
+              <div className="text-xs text-gray-400 font-medium mb-1">
+                Response Time
+              </div>
+              <div className="text-lg font-bold text-gray-400">--</div>
+            </div>
+            <div className="bg-gray-50 rounded-lg px-3 py-2 animate-pulse">
+              <div className="text-xs text-gray-400 font-medium mb-1">
+                Status Code
+              </div>
+              <div className="text-lg font-bold text-gray-400">--</div>
+            </div>
+          </>
         )}
       </div>
 

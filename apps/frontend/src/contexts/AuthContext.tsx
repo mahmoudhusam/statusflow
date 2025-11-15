@@ -10,10 +10,15 @@ import {
   Suspense,
 } from 'react';
 import { useRouter } from 'next/navigation';
+import { apiClient } from '@/lib/api-client';
 
 interface User {
   id: string;
   email: string;
+}
+
+interface AuthResponse {
+  token: string;
 }
 
 interface AuthContextType {
@@ -44,15 +49,6 @@ interface AuthProviderProps {
   children: ReactNode;
 }
 
-// Mock user database (in-memory, resets on page refresh)
-const mockUsers: Array<{ id: string; email: string; password: string }> = [
-  {
-    id: 'user-uuid-001',
-    email: 'test@example.com',
-    password: 'Password123', // In real app, this would be hashed
-  },
-];
-
 // Helper functions for cookie management
 const setCookie = (name: string, value: string, days: number = 7) => {
   const expires = new Date();
@@ -75,92 +71,109 @@ const deleteCookie = (name: string) => {
   document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;`;
 };
 
-// Inner component that uses useSearchParams (needs to be wrapped in Suspense)
 function AuthProviderInner({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
-  useEffect(() => {
-    // Check if user was logged in before (from cookies and localStorage)
-    const storedToken =
-      getCookie('auth_token') || localStorage.getItem('auth_token');
-    const storedUser = localStorage.getItem('auth_user');
-
-    if (storedToken && storedUser) {
-      setToken(storedToken);
-      setUser(JSON.parse(storedUser));
-      // Update cookie if it was only in localStorage
-      if (!getCookie('auth_token')) {
-        setCookie('auth_token', storedToken);
-      }
+  // Fetch current user from API
+  const fetchCurrentUser = useCallback(async (authToken: string) => {
+    try {
+      const userData = await apiClient.get<User>('/auth/me', authToken);
+      setUser(userData);
+      return userData;
+    } catch (error) {
+      console.error('Failed to fetch user:', error);
+      throw error;
     }
-    setLoading(false);
   }, []);
+
+  useEffect(() => {
+    // Check if user was logged in before
+    const checkAuth = async () => {
+      const storedToken =
+        getCookie('auth_token') || localStorage.getItem('auth_token');
+
+      if (storedToken) {
+        try {
+          const userData = await fetchCurrentUser(storedToken);
+          setToken(storedToken);
+          setUser(userData);
+          // Update cookie if it was only in localStorage
+          if (!getCookie('auth_token')) {
+            setCookie('auth_token', storedToken);
+          }
+        } catch (error) {
+          // Token is invalid, clear it
+          deleteCookie('auth_token');
+          localStorage.removeItem('auth_token');
+          console.error('Invalid token:', error);
+        }
+      }
+      setLoading(false);
+    };
+
+    checkAuth();
+  }, [fetchCurrentUser]);
 
   const login = useCallback(
     async (email: string, password: string, redirectTo?: string) => {
-      // Simulate API delay
-      await new Promise((resolve) => setTimeout(resolve, 800));
+      try {
+        // Call login API
+        const response = await apiClient.post<AuthResponse>('/auth/login', {
+          email,
+          password,
+        });
 
-      // Find user in mock database
-      const foundUser = mockUsers.find((u) => u.email === email);
+        const authToken = response.token;
 
-      if (!foundUser) {
-        throw new Error('User not found');
+        // Fetch user data
+        const userData = await fetchCurrentUser(authToken);
+
+        // Store token
+        setCookie('auth_token', authToken);
+        localStorage.setItem('auth_token', authToken);
+
+        setToken(authToken);
+        setUser(userData);
+
+        // Redirect
+        const destination = redirectTo || '/dashboard/monitors';
+        router.push(destination);
+      } catch (error) {
+        console.error('Login failed:', error);
+        const errorMessage =
+          error instanceof Error ? error.message : 'Invalid credentials';
+        throw new Error(errorMessage);
       }
-
-      if (foundUser.password !== password) {
-        throw new Error('Invalid password');
-      }
-
-      // Generate mock token
-      const mockToken = `mock-token-${Date.now()}`;
-
-      // Create user object (without password)
-      const userData: User = {
-        id: foundUser.id,
-        email: foundUser.email,
-      };
-
-      // Store in both cookie and localStorage for compatibility
-      setCookie('auth_token', mockToken);
-      localStorage.setItem('auth_token', mockToken);
-      localStorage.setItem('auth_user', JSON.stringify(userData));
-
-      setToken(mockToken);
-      setUser(userData);
-
-      // Use provided redirectTo or default to dashboard
-      const destination = redirectTo || '/dashboard/monitors';
-      router.push(destination);
     },
-    [router]
+    [router, fetchCurrentUser]
   );
 
   const signup = useCallback(
     async (email: string, password: string) => {
-      // Simulate API delay
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      try {
+        // Call signup API
+        await apiClient.post<User>('/auth/signup', {
+          email,
+          password,
+        });
 
-      // Check if user already exists
-      const existingUser = mockUsers.find((u) => u.email === email);
-      if (existingUser) {
-        throw new Error('User already exists');
+        // Auto-login after signup
+        await login(email, password);
+      } catch (error) {
+        console.error('Signup failed:', error);
+        if (
+          error instanceof Error &&
+          error.message?.includes('already exists')
+        ) {
+          throw new Error('User already exists');
+        }
+        const errorMessage =
+          error instanceof Error ? error.message : 'Signup failed';
+        throw new Error(errorMessage);
       }
-
-      // Create new user in mock database
-      const newUser = {
-        id: `user-uuid-${Date.now()}`,
-        email,
-        password,
-      };
-
-      mockUsers.push(newUser);
-
-      // Automatically log in after signup
-      await login(email, password);
     },
     [login]
   );
@@ -169,7 +182,6 @@ function AuthProviderInner({ children }: AuthProviderProps) {
     // Clear both cookie and localStorage
     deleteCookie('auth_token');
     localStorage.removeItem('auth_token');
-    localStorage.removeItem('auth_user');
 
     setUser(null);
     setToken(null);
