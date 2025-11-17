@@ -1,4 +1,3 @@
-import { AlertRule } from '@/alert/entities/alert-rule.entity';
 import { Monitor } from '../monitor/monitor.entity';
 import {
   Column,
@@ -9,6 +8,7 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { AlertRule } from '@/alert/entities/alert-rule.entity';
 import { NotificationChannel } from '@/alert/entities/notification-channel.entity';
 
 @Entity()

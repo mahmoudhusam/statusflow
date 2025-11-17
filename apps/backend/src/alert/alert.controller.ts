@@ -104,7 +104,7 @@ export class AlertController {
   async testNotificationChannel(
     @GetUser() user: User,
     @Param('id') id: string,
-  ) {
+  ): Promise<any> {
     return this.alertService.testNotificationChannel(id, user.id);
   }
 
@@ -142,7 +142,7 @@ export class AlertController {
 
   // Alert Templates
   @Get('templates')
-  async getAlertTemplates() {
+  getAlertTemplates(): any[] {
     return this.alertService.getAlertTemplates();
   }
 }
