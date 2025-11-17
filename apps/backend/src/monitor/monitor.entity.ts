@@ -9,7 +9,8 @@ import {
   UpdateDateColumn,
   JoinColumn,
 } from 'typeorm';
-import { CheckResult } from '../check-result/check-result.entity';
+import { CheckResult } from '@/check-result/check-result.entity';
+import { AlertRule } from '@/alert/entities/alert-rule.entity';
 
 @Entity()
 export class Monitor {
@@ -64,4 +65,7 @@ export class Monitor {
     onDelete: 'CASCADE',
   })
   checkResults: CheckResult[];
+
+  @OneToMany(() => AlertRule, (alertRule) => alertRule.monitor)
+  alertRules: AlertRule[];
 }
