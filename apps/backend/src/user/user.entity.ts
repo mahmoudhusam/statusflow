@@ -1,3 +1,4 @@
+import { AlertRule } from '@/alert/entities/alert-rule.entity';
 import { Monitor } from '../monitor/monitor.entity';
 import {
   Column,
@@ -8,6 +9,7 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { NotificationChannel } from '@/alert/entities/notification-channel.entity';
 
 @Entity()
 export class User {
@@ -29,4 +31,10 @@ export class User {
 
   @OneToMany(() => Monitor, (monitor) => monitor.user)
   monitors: Monitor[];
+
+  @OneToMany(() => AlertRule, (alertRule) => alertRule.user)
+  alertRules: AlertRule[];
+
+  @OneToMany(() => NotificationChannel, (channel) => channel.user)
+  notificationChannels: NotificationChannel[];
 }
