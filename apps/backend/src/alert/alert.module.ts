@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+000000000000000import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AlertService } from '@/alert/alert.service';
 import { AlertController } from '@/alert/alert.controller';
