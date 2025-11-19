@@ -20,7 +20,16 @@ interface CreateRuleData {
   channels: Record<string, unknown>;
 }
 
-type UpdateRuleData = Partial<AlertRule>;
+interface UpdateRuleData {
+  name?: string;
+  description?: string;
+  type?: string;
+  severity?: string;
+  enabled?: boolean;
+  monitorId?: string;
+  conditions?: Record<string, unknown>;
+  channels?: Record<string, unknown>;
+}
 
 export default function AlertRulesPage() {
   const { token } = useAuth();
