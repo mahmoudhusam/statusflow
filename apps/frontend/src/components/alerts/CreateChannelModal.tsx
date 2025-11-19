@@ -1,12 +1,12 @@
 import { useState } from 'react';
-import { ChannelType } from '@/types/alert';
+import { ChannelType, NotificationChannelConfig } from '@/types/alert';
 
 interface CreateChannelData {
   name: string;
   type: string;
   enabled?: boolean;
   isDefault?: boolean;
-  configuration: Record<string, unknown>;
+  configuration: NotificationChannelConfig;
   quietHours?: Record<string, unknown>;
 }
 
@@ -91,7 +91,7 @@ export function CreateChannelModal({
 
     try {
       // Build configuration based on type
-      const configuration: Record<string, unknown> = {};
+      const configuration: NotificationChannelConfig = {};
 
       if (formData.type === ChannelType.EMAIL) {
         configuration.emailAddresses = formData.emailAddresses;

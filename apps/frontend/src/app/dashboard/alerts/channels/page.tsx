@@ -7,18 +7,28 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { ErrorDisplay } from '@/components/ui/ErrorDisplay';
 import { NotificationChannelCard } from '@/components/alerts/NotificationChannelCard';
 import { CreateChannelModal } from '@/components/alerts/CreateChannelModal';
-import type { NotificationChannel } from '@/types/alert';
+import type {
+  NotificationChannel,
+  NotificationChannelConfig,
+} from '@/types/alert';
 
 interface CreateChannelData {
   name: string;
   type: string;
   enabled?: boolean;
   isDefault?: boolean;
-  configuration: Record<string, unknown>;
+  configuration: NotificationChannelConfig;
   quietHours?: Record<string, unknown>;
 }
 
-type UpdateChannelData = Partial<NotificationChannel>;
+interface UpdateChannelData {
+  name?: string;
+  type?: string;
+  enabled?: boolean;
+  isDefault?: boolean;
+  configuration?: NotificationChannelConfig;
+  quietHours?: Record<string, unknown>;
+}
 
 export default function NotificationChannelsPage() {
   const { token } = useAuth();
