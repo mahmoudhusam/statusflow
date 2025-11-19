@@ -18,7 +18,7 @@ interface CreateChannelData {
   quietHours?: Record<string, unknown>;
 }
 
-interface UpdateChannelData extends Partial<NotificationChannel> {}
+type UpdateChannelData = Partial<NotificationChannel>;
 
 export default function NotificationChannelsPage() {
   const { token } = useAuth();

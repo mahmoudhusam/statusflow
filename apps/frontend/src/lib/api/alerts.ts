@@ -17,7 +17,7 @@ interface CreateAlertRuleData {
   channels: Record<string, unknown>;
 }
 
-interface UpdateAlertRuleData extends Partial<CreateAlertRuleData> {}
+type UpdateAlertRuleData = Partial<CreateAlertRuleData>;
 
 interface CreateNotificationChannelData {
   name: string;
@@ -28,8 +28,7 @@ interface CreateNotificationChannelData {
   quietHours?: Record<string, unknown>;
 }
 
-interface UpdateNotificationChannelData
-  extends Partial<CreateNotificationChannelData> {}
+type UpdateNotificationChannelData = Partial<CreateNotificationChannelData>;
 
 interface TestChannelResponse {
   success: boolean;
