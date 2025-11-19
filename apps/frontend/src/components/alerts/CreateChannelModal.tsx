@@ -1,5 +1,9 @@
 import { useState } from 'react';
-import { ChannelType, NotificationChannelConfig } from '@/types/alert';
+import {
+  ChannelType,
+  NotificationChannelConfig,
+  QuietHours,
+} from '@/types/alert';
 
 interface CreateChannelData {
   name: string;
@@ -7,7 +11,7 @@ interface CreateChannelData {
   enabled?: boolean;
   isDefault?: boolean;
   configuration: NotificationChannelConfig;
-  quietHours?: Record<string, unknown>;
+  quietHours?: QuietHours;
 }
 
 interface CreateChannelModalProps {

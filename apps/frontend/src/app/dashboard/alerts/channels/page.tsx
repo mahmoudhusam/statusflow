@@ -10,6 +10,7 @@ import { CreateChannelModal } from '@/components/alerts/CreateChannelModal';
 import type {
   NotificationChannel,
   NotificationChannelConfig,
+  QuietHours,
 } from '@/types/alert';
 
 interface CreateChannelData {
@@ -18,7 +19,7 @@ interface CreateChannelData {
   enabled?: boolean;
   isDefault?: boolean;
   configuration: NotificationChannelConfig;
-  quietHours?: Record<string, unknown>;
+  quietHours?: QuietHours;
 }
 
 interface UpdateChannelData {
@@ -27,7 +28,7 @@ interface UpdateChannelData {
   enabled?: boolean;
   isDefault?: boolean;
   configuration?: NotificationChannelConfig;
-  quietHours?: Record<string, unknown>;
+  quietHours?: QuietHours;
 }
 
 export default function NotificationChannelsPage() {

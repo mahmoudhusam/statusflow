@@ -3,6 +3,7 @@ import type {
   AlertRule,
   NotificationChannel,
   NotificationChannelConfig,
+  QuietHours,
   AlertHistory,
   AlertTemplate,
 } from '@/types/alert';
@@ -26,7 +27,7 @@ interface CreateNotificationChannelData {
   enabled?: boolean;
   isDefault?: boolean;
   configuration: NotificationChannelConfig;
-  quietHours?: Record<string, unknown>;
+  quietHours?: QuietHours;
 }
 
 type UpdateNotificationChannelData = Partial<CreateNotificationChannelData>;
