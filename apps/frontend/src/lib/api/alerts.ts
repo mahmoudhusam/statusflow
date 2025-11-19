@@ -2,6 +2,7 @@ import { apiClient } from '../api-client';
 import type {
   AlertRule,
   NotificationChannel,
+  NotificationChannelConfig,
   AlertHistory,
   AlertTemplate,
 } from '@/types/alert';
@@ -24,7 +25,7 @@ interface CreateNotificationChannelData {
   type: string;
   enabled?: boolean;
   isDefault?: boolean;
-  configuration: Record<string, unknown>;
+  configuration: NotificationChannelConfig;
   quietHours?: Record<string, unknown>;
 }
 
