@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { alertsApi } from '@/lib/api/alerts';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
@@ -9,6 +9,19 @@ import { AlertRuleCard } from '@/components/alerts/AlertRuleCard';
 import { CreateAlertRuleModal } from '@/components/alerts/CreateAlertRuleModal';
 import type { AlertRule } from '@/types/alert';
 
+interface CreateRuleData {
+  name: string;
+  description?: string;
+  type: string;
+  severity: string;
+  enabled?: boolean;
+  monitorId?: string;
+  conditions: Record<string, unknown>;
+  channels: Record<string, unknown>;
+}
+
+interface UpdateRuleData extends Partial<AlertRule> {}
+
 export default function AlertRulesPage() {
   const { token } = useAuth();
   const [rules, setRules] = useState<AlertRule[]>([]);
@@ -16,11 +29,7 @@ export default function AlertRulesPage() {
   const [error, setError] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
 
-  useEffect(() => {
-    fetchAlertRules();
-  }, [token]);
-
-  const fetchAlertRules = async () => {
+  const fetchAlertRules = useCallback(async () => {
     if (!token) return;
 
     try {
@@ -33,9 +42,13 @@ export default function AlertRulesPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [token]);
 
-  const handleCreateRule = async (ruleData: any) => {
+  useEffect(() => {
+    fetchAlertRules();
+  }, [fetchAlertRules]);
+
+  const handleCreateRule = async (ruleData: CreateRuleData) => {
     try {
       const newRule = await alertsApi.createAlertRule(ruleData, token!);
       setRules([newRule, ...rules]);
@@ -46,7 +59,7 @@ export default function AlertRulesPage() {
     }
   };
 
-  const handleUpdateRule = async (id: string, updates: any) => {
+  const handleUpdateRule = async (id: string, updates: UpdateRuleData) => {
     try {
       const updatedRule = await alertsApi.updateAlertRule(id, updates, token!);
       setRules(rules.map((rule) => (rule.id === id ? updatedRule : rule)));

@@ -4,9 +4,20 @@ import { monitorsApi } from '@/lib/api/monitors';
 import type { Monitor } from '@/types/monitor';
 import { AlertType, AlertSeverity } from '@/types/alert';
 
+interface CreateAlertRuleData {
+  name: string;
+  description?: string;
+  type: string;
+  severity: string;
+  enabled?: boolean;
+  monitorId?: string;
+  conditions: Record<string, unknown>;
+  channels: Record<string, unknown>;
+}
+
 interface CreateAlertRuleModalProps {
   onClose: () => void;
-  onCreate: (data: any) => Promise<void>;
+  onCreate: (data: CreateAlertRuleData) => Promise<void>;
 }
 
 export function CreateAlertRuleModal({
@@ -54,7 +65,7 @@ export function CreateAlertRuleModal({
 
     try {
       // Build conditions based on type
-      const conditions: any = {};
+      const conditions: Record<string, unknown> = {};
       if (formData.type === AlertType.DOWNTIME) {
         conditions.consecutiveFailures = formData.consecutiveFailures;
       } else if (formData.type === AlertType.LATENCY) {
@@ -66,7 +77,7 @@ export function CreateAlertRuleModal({
       }
 
       // Build channels
-      const channels: any = {
+      const channels: Record<string, unknown> = {
         email: formData.emailEnabled,
       };
 
@@ -78,7 +89,7 @@ export function CreateAlertRuleModal({
         };
       }
 
-      const payload = {
+      const payload: CreateAlertRuleData = {
         name: formData.name,
         description: formData.description || undefined,
         type: formData.type,

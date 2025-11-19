@@ -1,9 +1,18 @@
 import { useState } from 'react';
 import { ChannelType } from '@/types/alert';
 
+interface CreateChannelData {
+  name: string;
+  type: string;
+  enabled?: boolean;
+  isDefault?: boolean;
+  configuration: Record<string, unknown>;
+  quietHours?: Record<string, unknown>;
+}
+
 interface CreateChannelModalProps {
   onClose: () => void;
-  onCreate: (data: any) => Promise<void>;
+  onCreate: (data: CreateChannelData) => Promise<void>;
 }
 
 export function CreateChannelModal({
@@ -82,7 +91,7 @@ export function CreateChannelModal({
 
     try {
       // Build configuration based on type
-      const configuration: any = {};
+      const configuration: Record<string, unknown> = {};
 
       if (formData.type === ChannelType.EMAIL) {
         configuration.emailAddresses = formData.emailAddresses;
@@ -97,7 +106,7 @@ export function CreateChannelModal({
         configuration.slackChannel = formData.slackChannel;
       }
 
-      const payload = {
+      const payload: CreateChannelData = {
         name: formData.name,
         type: formData.type,
         enabled: formData.enabled,
