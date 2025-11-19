@@ -61,13 +61,13 @@ export default function AlertTemplatesPage() {
         severity: selectedTemplate.severity,
         enabled: true,
         monitorId: selectedMonitor || undefined,
-        conditions: selectedTemplate.conditions,
+        conditions: selectedTemplate.conditions as Record<string, unknown>,
         channels: {
           email: true,
           webhook: {
             enabled: false,
           },
-        },
+        } as Record<string, unknown>,
       };
 
       await alertsApi.createAlertRule(ruleData, token);
