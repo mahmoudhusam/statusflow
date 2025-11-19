@@ -140,3 +140,11 @@ export interface AlertTemplate {
   severity: AlertSeverity;
   conditions: AlertConditions;
 }
+
+export interface QuietHours {
+  enabled: boolean;
+  startTime: string;
+  endTime: string;
+  timezone: string;
+  daysOfWeek?: number[];
+}
