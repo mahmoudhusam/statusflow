@@ -1,9 +1,20 @@
 import { useState } from 'react';
 import type { AlertRule } from '@/types/alert';
 
+interface UpdateRuleData {
+  name?: string;
+  description?: string;
+  type?: string;
+  severity?: string;
+  enabled?: boolean;
+  monitorId?: string;
+  conditions?: Record<string, unknown>;
+  channels?: Record<string, unknown>;
+}
+
 interface AlertRuleCardProps {
   rule: AlertRule;
-  onUpdate: (id: string, updates: Partial<AlertRule>) => Promise<void>;
+  onUpdate: (id: string, updates: UpdateRuleData) => Promise<void>;
   onDelete: (id: string) => void;
 }
 
