@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { alertsApi } from '@/lib/api/alerts';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
@@ -8,6 +8,17 @@ import { ErrorDisplay } from '@/components/ui/ErrorDisplay';
 import { NotificationChannelCard } from '@/components/alerts/NotificationChannelCard';
 import { CreateChannelModal } from '@/components/alerts/CreateChannelModal';
 import type { NotificationChannel } from '@/types/alert';
+
+interface CreateChannelData {
+  name: string;
+  type: string;
+  enabled?: boolean;
+  isDefault?: boolean;
+  configuration: Record<string, unknown>;
+  quietHours?: Record<string, unknown>;
+}
+
+interface UpdateChannelData extends Partial<NotificationChannel> {}
 
 export default function NotificationChannelsPage() {
   const { token } = useAuth();
@@ -17,11 +28,7 @@ export default function NotificationChannelsPage() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [testingChannel, setTestingChannel] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchChannels();
-  }, [token]);
-
-  const fetchChannels = async () => {
+  const fetchChannels = useCallback(async () => {
     if (!token) return;
 
     try {
@@ -34,9 +41,13 @@ export default function NotificationChannelsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [token]);
 
-  const handleCreateChannel = async (channelData: any) => {
+  useEffect(() => {
+    fetchChannels();
+  }, [fetchChannels]);
+
+  const handleCreateChannel = async (channelData: CreateChannelData) => {
     try {
       const newChannel = await alertsApi.createNotificationChannel(
         channelData,
@@ -50,7 +61,10 @@ export default function NotificationChannelsPage() {
     }
   };
 
-  const handleUpdateChannel = async (id: string, updates: any) => {
+  const handleUpdateChannel = async (
+    id: string,
+    updates: UpdateChannelData
+  ) => {
     try {
       const updatedChannel = await alertsApi.updateNotificationChannel(
         id,

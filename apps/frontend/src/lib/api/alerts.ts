@@ -6,6 +6,36 @@ import type {
   AlertTemplate,
 } from '@/types/alert';
 
+interface CreateAlertRuleData {
+  name: string;
+  description?: string;
+  type: string;
+  severity: string;
+  enabled?: boolean;
+  monitorId?: string;
+  conditions: Record<string, unknown>;
+  channels: Record<string, unknown>;
+}
+
+interface UpdateAlertRuleData extends Partial<CreateAlertRuleData> {}
+
+interface CreateNotificationChannelData {
+  name: string;
+  type: string;
+  enabled?: boolean;
+  isDefault?: boolean;
+  configuration: Record<string, unknown>;
+  quietHours?: Record<string, unknown>;
+}
+
+interface UpdateNotificationChannelData
+  extends Partial<CreateNotificationChannelData> {}
+
+interface TestChannelResponse {
+  success: boolean;
+  message: string;
+}
+
 export const alertsApi = {
   // Alert Rules
   async getAlertRules(token: string, monitorId?: string): Promise<AlertRule[]> {
@@ -17,13 +47,16 @@ export const alertsApi = {
     return apiClient.get<AlertRule>(`/alerts/rules/${id}`, token);
   },
 
-  async createAlertRule(data: any, token: string): Promise<AlertRule> {
+  async createAlertRule(
+    data: CreateAlertRuleData,
+    token: string
+  ): Promise<AlertRule> {
     return apiClient.post<AlertRule>('/alerts/rules', data, token);
   },
 
   async updateAlertRule(
     id: string,
-    data: any,
+    data: UpdateAlertRuleData,
     token: string
   ): Promise<AlertRule> {
     return apiClient.patch<AlertRule>(`/alerts/rules/${id}`, data, token);
@@ -46,7 +79,7 @@ export const alertsApi = {
   },
 
   async createNotificationChannel(
-    data: any,
+    data: CreateNotificationChannelData,
     token: string
   ): Promise<NotificationChannel> {
     return apiClient.post<NotificationChannel>('/alerts/channels', data, token);
@@ -54,7 +87,7 @@ export const alertsApi = {
 
   async updateNotificationChannel(
     id: string,
-    data: any,
+    data: UpdateNotificationChannelData,
     token: string
   ): Promise<NotificationChannel> {
     return apiClient.patch<NotificationChannel>(
@@ -68,8 +101,15 @@ export const alertsApi = {
     return apiClient.delete<void>(`/alerts/channels/${id}`, token);
   },
 
-  async testNotificationChannel(id: string, token: string): Promise<any> {
-    return apiClient.post(`/alerts/channels/${id}/test`, {}, token);
+  async testNotificationChannel(
+    id: string,
+    token: string
+  ): Promise<TestChannelResponse> {
+    return apiClient.post<TestChannelResponse>(
+      `/alerts/channels/${id}/test`,
+      {},
+      token
+    );
   },
 
   // Alert History

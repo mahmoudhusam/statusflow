@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { alertsApi } from '@/lib/api/alerts';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
@@ -18,11 +18,7 @@ export default function AlertHistoryPage() {
     dateRange: '7d',
   });
 
-  useEffect(() => {
-    fetchAlertHistory();
-  }, [token, filters]);
-
-  const fetchAlertHistory = async () => {
+  const fetchAlertHistory = useCallback(async () => {
     if (!token) return;
 
     try {
@@ -50,7 +46,11 @@ export default function AlertHistoryPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [token, filters.status, filters.dateRange]);
+
+  useEffect(() => {
+    fetchAlertHistory();
+  }, [fetchAlertHistory]);
 
   const handleAcknowledge = async (id: string) => {
     try {

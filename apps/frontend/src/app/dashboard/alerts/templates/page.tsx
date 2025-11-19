@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { alertsApi } from '@/lib/api/alerts';
 import { monitorsApi } from '@/lib/api/monitors';
@@ -21,11 +21,7 @@ export default function AlertTemplatesPage() {
   const [isCreating, setIsCreating] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
 
-  useEffect(() => {
-    fetchData();
-  }, [token]);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     if (!token) return;
 
     try {
@@ -42,7 +38,11 @@ export default function AlertTemplatesPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [token]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   const handleUseTemplate = (template: AlertTemplate) => {
     setSelectedTemplate(template);
