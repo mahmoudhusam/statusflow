@@ -1,13 +1,16 @@
 import Link from 'next/link';
 import { formatRelative } from 'date-fns/formatRelative';
 import type { Monitor } from '@/types/monitor';
+import { MonitorActions } from '@/components/monitors/MonitorActions';
+import { CheckCircle, AlertCircle, PauseCircle, Activity } from 'lucide-react';
 
 interface MonitorCardProps {
   monitor: Monitor;
+  token: string;
+  onUpdate?: () => void;
 }
 
-export function MonitorCard({ monitor }: MonitorCardProps) {
-  // Use real latest status from backend
+export function MonitorCard({ monitor, token, onUpdate }: MonitorCardProps) {
   const latestStatus = monitor.latestStatus;
   const isUp = latestStatus?.isUp ?? false;
   const hasData = !!latestStatus;
@@ -17,6 +20,68 @@ export function MonitorCard({ monitor }: MonitorCardProps) {
     : monitor.lastCheckedAt
       ? formatRelative(new Date(monitor.lastCheckedAt), new Date())
       : 'Never checked';
+
+  const getMonitorStatus = (): 'UP' | 'DOWN' | 'PAUSED' | 'PENDING' => {
+    if (monitor.paused) return 'PAUSED';
+    if (!hasData) return 'PENDING';
+    return isUp ? 'UP' : 'DOWN';
+  };
+
+  const getStatusIcon = () => {
+    const status = getMonitorStatus();
+    switch (status) {
+      case 'UP':
+        return <CheckCircle className="w-5 h-5 text-green-500" />;
+      case 'DOWN':
+        return <AlertCircle className="w-5 h-5 text-red-500" />;
+      case 'PAUSED':
+        return <PauseCircle className="w-5 h-5 text-gray-500" />;
+      default:
+        return <Activity className="w-5 h-5 text-yellow-500" />;
+    }
+  };
+
+  const getStatusText = () => {
+    const status = getMonitorStatus();
+    switch (status) {
+      case 'UP':
+        return 'Operational';
+      case 'DOWN':
+        return 'Down';
+      case 'PAUSED':
+        return 'Paused';
+      default:
+        return 'Checking...';
+    }
+  };
+
+  const getStatusColor = () => {
+    const status = getMonitorStatus();
+    switch (status) {
+      case 'UP':
+        return 'text-green-700 bg-green-50 ring-green-600/20';
+      case 'DOWN':
+        return 'text-red-700 bg-red-50 ring-red-600/20';
+      case 'PAUSED':
+        return 'text-gray-700 bg-gray-50 ring-gray-600/20';
+      default:
+        return 'text-yellow-700 bg-yellow-50 ring-yellow-600/20';
+    }
+  };
+
+  const getStatusPulse = () => {
+    const status = getMonitorStatus();
+    switch (status) {
+      case 'UP':
+        return 'bg-green-500 animate-pulse';
+      case 'DOWN':
+        return 'bg-red-500';
+      case 'PAUSED':
+        return 'bg-gray-400';
+      default:
+        return 'bg-yellow-400 animate-pulse';
+    }
+  };
 
   return (
     <Link
@@ -42,35 +107,47 @@ export function MonitorCard({ monitor }: MonitorCardProps) {
           </p>
         </div>
 
-        {/* Status Badge */}
-        <div className="ml-3 flex-shrink-0">
-          {hasData ? (
+        {/* Status Badge and Actions */}
+        <div className="ml-3 flex-shrink-0 flex items-center gap-2">
+          <span
+            className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ring-1 ${getStatusColor()}`}
+          >
             <span
-              className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${
-                isUp
-                  ? 'bg-green-50 text-green-700 ring-1 ring-green-600/20'
-                  : 'bg-red-50 text-red-700 ring-1 ring-red-600/20'
-              }`}
-            >
-              <span
-                className={`w-1.5 h-1.5 rounded-full mr-1.5 ${
-                  isUp ? 'bg-green-500 animate-pulse' : 'bg-red-500'
-                }`}
-              ></span>
-              {isUp ? 'UP' : 'DOWN'}
-            </span>
-          ) : (
-            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-gray-50 text-gray-600 ring-1 ring-gray-600/20">
-              <span className="w-1.5 h-1.5 rounded-full mr-1.5 bg-gray-400"></span>
-              PENDING
-            </span>
-          )}
+              className={`w-1.5 h-1.5 rounded-full mr-1.5 ${getStatusPulse()}`}
+            ></span>
+            {getStatusText()}
+          </span>
+
+          {/* Monitor Actions */}
+          <div onClick={(e) => e.preventDefault()} className="relative z-10">
+            <MonitorActions
+              monitor={monitor}
+              token={token}
+              onUpdate={onUpdate}
+            />
+          </div>
         </div>
+      </div>
+
+      {/* Status Icon Row - New addition */}
+      <div className="flex items-center gap-2 mb-4 px-3 py-2 bg-gray-50 rounded-lg">
+        {getStatusIcon()}
+        <div className="flex-1">
+          <div className="text-xs text-gray-500">Current Status</div>
+          <div className="text-sm font-medium text-gray-900">
+            {getStatusText()}
+          </div>
+        </div>
+        {monitor.httpMethod && (
+          <span className="text-xs font-mono font-semibold text-gray-600 bg-white px-2 py-1 rounded">
+            {monitor.httpMethod}
+          </span>
+        )}
       </div>
 
       {/* Metrics */}
       <div className="grid grid-cols-2 gap-3 mb-4">
-        {latestStatus?.responseTime != null && (
+        {latestStatus?.responseTime != null ? (
           <div className="bg-blue-50 rounded-lg px-3 py-2">
             <div className="text-xs text-blue-600 font-medium mb-1">
               Response Time
@@ -79,8 +156,16 @@ export function MonitorCard({ monitor }: MonitorCardProps) {
               {latestStatus.responseTime}ms
             </div>
           </div>
+        ) : (
+          <div className="bg-gray-50 rounded-lg px-3 py-2 animate-pulse">
+            <div className="text-xs text-gray-400 font-medium mb-1">
+              Response Time
+            </div>
+            <div className="text-lg font-bold text-gray-400">--</div>
+          </div>
         )}
-        {latestStatus?.status != null && (
+
+        {latestStatus?.status != null ? (
           <div className="bg-gray-50 rounded-lg px-3 py-2">
             <div className="text-xs text-gray-600 font-medium mb-1">
               Status Code
@@ -89,22 +174,13 @@ export function MonitorCard({ monitor }: MonitorCardProps) {
               {latestStatus.status}
             </div>
           </div>
-        )}
-        {!hasData && (
-          <>
-            <div className="bg-gray-50 rounded-lg px-3 py-2 animate-pulse">
-              <div className="text-xs text-gray-400 font-medium mb-1">
-                Response Time
-              </div>
-              <div className="text-lg font-bold text-gray-400">--</div>
+        ) : (
+          <div className="bg-gray-50 rounded-lg px-3 py-2 animate-pulse">
+            <div className="text-xs text-gray-400 font-medium mb-1">
+              Status Code
             </div>
-            <div className="bg-gray-50 rounded-lg px-3 py-2 animate-pulse">
-              <div className="text-xs text-gray-400 font-medium mb-1">
-                Status Code
-              </div>
-              <div className="text-lg font-bold text-gray-400">--</div>
-            </div>
-          </>
+            <div className="text-lg font-bold text-gray-400">--</div>
+          </div>
         )}
       </div>
 
