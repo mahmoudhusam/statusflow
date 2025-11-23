@@ -17,6 +17,16 @@ interface ErrorResponse {
 }
 
 async function handleResponse<T>(response: Response): Promise<T> {
+  if (response.status === 401) {
+    if (typeof window !== 'undefined') {
+      document.cookie =
+        'auth_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+      localStorage.removeItem('auth_token');
+      window.location.href = '/login';
+    }
+    throw new ApiError('Session expired. Please login again.', 401);
+  }
+
   if (!response.ok) {
     let errorData: ErrorResponse = {};
     try {
@@ -100,6 +110,24 @@ export const apiClient = {
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
       method: 'DELETE',
       headers,
+    });
+
+    return handleResponse<T>(response);
+  },
+
+  async put<T>(endpoint: string, data: unknown, token?: string): Promise<T> {
+    const headers: HeadersInit = {
+      'Content-Type': 'application/json',
+    };
+
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      method: 'PUT',
+      headers,
+      body: JSON.stringify(data),
     });
 
     return handleResponse<T>(response);
