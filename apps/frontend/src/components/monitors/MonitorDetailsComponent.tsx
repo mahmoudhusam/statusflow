@@ -239,11 +239,9 @@ export function MonitorDetailsComponent({
     [metricsData]
   );
 
-  const lastChecked = monitor.latestStatus?.checkedAt
-    ? formatRelative(new Date(monitor.latestStatus.checkedAt), new Date())
-    : monitor.lastCheckedAt
-      ? formatRelative(new Date(monitor.lastCheckedAt), new Date())
-      : 'Never checked';
+  const lastChecked = monitor.lastCheckedAt
+    ? formatRelative(new Date(monitor.lastCheckedAt), new Date())
+    : 'Never checked';
 
   const isUp =
     monitor.latestStatus?.isUp ||

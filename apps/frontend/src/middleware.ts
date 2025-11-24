@@ -6,7 +6,7 @@ const authRoutes = ['/login', '/signup'];
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  const authToken = request.cookies.get('auth_token')?.value;
+  const authToken = request.cookies.get('auth_token');
   const isAuthenticated = !!authToken;
 
   const isAuthRoute = authRoutes.includes(pathname);

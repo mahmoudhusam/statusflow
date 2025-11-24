@@ -117,23 +117,6 @@ function AuthProviderInner({ children }: AuthProviderProps) {
     checkAuth();
   }, [fetchCurrentUser]);
 
-  // Check token expiration every minute
-  useEffect(() => {
-    const checkTokenExpiration = () => {
-      const authToken = getCookie('auth_token');
-      if (!authToken && user) {
-        setUser(null);
-        setToken(null);
-        router.push('/login');
-      }
-    };
-
-    // Check every minute
-    const interval = setInterval(checkTokenExpiration, 60000);
-
-    return () => clearInterval(interval);
-  }, [user, router]);
-
   const login = useCallback(
     async (email: string, password: string, redirectTo?: string) => {
       try {
