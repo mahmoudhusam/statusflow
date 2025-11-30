@@ -48,6 +48,6 @@ import { ReportsModule } from '@/reports/reports.module';
     ReportsModule,
   ],
   controllers: [AppController],
-  providers: [AppService, AlertService],
+  providers: [AppService],
 })
 export class AppModule {}
