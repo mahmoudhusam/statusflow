@@ -5,7 +5,7 @@ import {
   IsBoolean,
   IsObject,
 } from 'class-validator';
-import { ChannelType } from '../entities/notification-channel.entity';
+import { ChannelType } from '@/alert/entities/notification-channel.entity';
 
 export class CreateNotificationChannelDto {
   @IsString()

@@ -14,11 +14,11 @@ import {
 import { JwtGuard } from '@/auth/guard';
 import { GetUser } from '@/auth/decorators';
 import { User } from '@/user/user.entity';
-import { AlertService } from './alert.service';
-import { CreateAlertRuleDto } from './dto/create-alert-rule.dto';
-import { UpdateAlertRuleDto } from './dto/update-alert-rule.dto';
-import { CreateNotificationChannelDto } from './dto/create-notification-channel.dto';
-import { UpdateNotificationChannelDto } from './dto/update-notification-channel.dto';
+import { AlertService } from '@/alert/alert.service';
+import { CreateAlertRuleDto } from '@/alert/dto/create-alert-rule.dto';
+import { UpdateAlertRuleDto } from '@/alert/dto/update-alert-rule.dto';
+import { CreateNotificationChannelDto } from '@/alert/dto/create-notification-channel.dto';
+import { UpdateNotificationChannelDto } from '@/alert/dto/update-notification-channel.dto';
 
 @UseGuards(JwtGuard)
 @Controller('alerts')

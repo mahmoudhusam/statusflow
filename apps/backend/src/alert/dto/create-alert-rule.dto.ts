@@ -8,7 +8,7 @@ import {
   ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { AlertType, AlertSeverity } from '../entities/alert-rule.entity';
+import { AlertType, AlertSeverity } from '@/alert/entities/alert-rule.entity';
 
 class AlertConditionsDto {
   @IsOptional()
