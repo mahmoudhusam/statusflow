@@ -122,7 +122,7 @@ export default function MonitorsPage() {
       )}
 
       {/* Monitors Grid */}
-      {!loading && !error && monitors && (
+      {!loading && !error && monitors && token && (
         <>
           {monitors.length === 0 ? (
             <div className="text-center py-16">
@@ -173,7 +173,7 @@ export default function MonitorsPage() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {monitors.map((monitor) => (
-                <MonitorCard key={monitor.id} monitor={monitor} />
+                <MonitorCard key={monitor.id} monitor={monitor} token={token} />
               ))}
             </div>
           )}
