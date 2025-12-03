@@ -150,7 +150,7 @@ export function CreateAlertRuleModal({
                 onChange={(e) =>
                   setFormData({ ...formData, name: e.target.value })
                 }
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400"
                 placeholder="High Latency Alert"
               />
             </div>
@@ -164,7 +164,7 @@ export function CreateAlertRuleModal({
                 onChange={(e) =>
                   setFormData({ ...formData, description: e.target.value })
                 }
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400"
                 rows={2}
                 placeholder="Alert when response time exceeds threshold"
               />
@@ -183,7 +183,7 @@ export function CreateAlertRuleModal({
                       type: e.target.value as AlertType,
                     })
                   }
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
                 >
                   <option value={AlertType.DOWNTIME}>Downtime</option>
                   <option value={AlertType.LATENCY}>High Latency</option>
@@ -204,7 +204,7 @@ export function CreateAlertRuleModal({
                       severity: e.target.value as AlertSeverity,
                     })
                   }
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
                 >
                   <option value={AlertSeverity.LOW}>Low</option>
                   <option value={AlertSeverity.MEDIUM}>Medium</option>
@@ -223,7 +223,7 @@ export function CreateAlertRuleModal({
                 onChange={(e) =>
                   setFormData({ ...formData, monitorId: e.target.value })
                 }
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
               >
                 <option value="">All Monitors (Global Rule)</option>
                 {monitors.map((monitor) => (
@@ -282,7 +282,7 @@ export function CreateAlertRuleModal({
                       latencyThreshold: parseInt(e.target.value),
                     })
                   }
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-400 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
                 />
                 <p className="text-xs text-gray-500 mt-1">
                   Alert when response time exceeds this value
@@ -305,7 +305,7 @@ export function CreateAlertRuleModal({
                       .filter((code) => !isNaN(code));
                     setFormData({ ...formData, statusCodes: codes });
                   }}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400"
                 />
                 <p className="text-xs text-gray-500 mt-1">
                   Alert when these status codes are returned

@@ -102,7 +102,7 @@ export default function AlertHistoryPage() {
               onChange={(e) =>
                 setFilters({ ...filters, status: e.target.value })
               }
-              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
             >
               <option value="all">All</option>
               <option value="triggered">Triggered</option>
@@ -119,7 +119,7 @@ export default function AlertHistoryPage() {
               onChange={(e) =>
                 setFilters({ ...filters, dateRange: e.target.value })
               }
-              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
             >
               <option value="24h">Last 24 hours</option>
               <option value="7d">Last 7 days</option>

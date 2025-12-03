@@ -496,7 +496,7 @@ export default function ReportsPage() {
             {/* Uptime Chart */}
             {uptimeChartData && (
               <div className="bg-white rounded-lg shadow-md p-6">
-                <h3 className="text-lg font-semibold mb-4">
+                <h3 className="text-lg font-semibold mb-4 text-gray-600">
                   Uptime by Monitor
                 </h3>
                 <Bar
@@ -532,7 +532,9 @@ export default function ReportsPage() {
             {/* Response Time Chart */}
             {responseTimeChartData && (
               <div className="bg-white rounded-lg shadow-md p-6">
-                <h3 className="text-lg font-semibold mb-4">Response Times</h3>
+                <h3 className="text-lg font-semibold mb-4 text-gray-600">
+                  Response Times
+                </h3>
                 <Line
                   data={responseTimeChartData}
                   options={{
@@ -566,7 +568,7 @@ export default function ReportsPage() {
             {/* Status Distribution */}
             {statusDistributionData && (
               <div className="bg-white rounded-lg shadow-md p-6">
-                <h3 className="text-lg font-semibold mb-4">
+                <h3 className="text-lg font-semibold mb-4 text-gray-600">
                   Check Status Distribution
                 </h3>
                 <div className="flex justify-center">
@@ -609,7 +611,7 @@ export default function ReportsPage() {
 
           {/* Detailed Monitor Table */}
           <div className="bg-white rounded-lg shadow-md p-6">
-            <h3 className="text-lg font-semibold mb-4">
+            <h3 className="text-lg font-semibold mb-4 text-gray-600">
               Detailed Monitor Statistics
             </h3>
             <div className="overflow-x-auto">
