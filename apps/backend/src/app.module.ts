@@ -28,13 +28,16 @@ import { ReportsModule } from '@/reports/reports.module';
         type: 'postgres',
         host: config.get<string>('DB_HOST', 'localhost'),
         port: config.get<number>('DB_PORT', 5432),
-        username: config.get<string>('POSTGRES_USER'),
-        password: config.get<string>('POSTGRES_PASSWORD'),
-        database: config.get<string>('POSTGRES_DB'),
+        username: config.get<string>('DB_USER'),
+        password: config.get<string>('DB_PASSWORD'),
+        database: config.get<string>('DB_NAME'),
         entities: [__dirname + '/**/*.entity{.ts,.js}'],
         synchronize: false, // Keep this as false for migrations
         migrations: [__dirname + '/migrations/*{.ts,.js}'],
         migrationsRun: false,
+        ssl: {
+          rejectUnauthorized: false,
+        },
         // logging: ['query', 'error'], // Enable query and error logging
       }),
     }),
