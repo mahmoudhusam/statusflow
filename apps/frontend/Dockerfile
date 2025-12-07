@@ -1,25 +1,24 @@
-FROM node:18-alpine AS base
+FROM node:20-alpine AS builder
 
-# Install dependencies
-FROM base AS deps
 WORKDIR /app
-COPY package*.json ./
-RUN npm ci
 
-# Build the application
-FROM base AS builder
-WORKDIR /app
-COPY --from=deps /app/node_modules ./node_modules
+# Copy the entire monorepo
 COPY . .
 
-# Build with environment variables
+# Increase timeout and retries to prevent ECONNRESET
+RUN npm config set fetch-retry-maxtimeout 600000 \
+    && npm config set fetch-retries 5 \
+    && npm ci
+
+# Build the frontend
 ARG NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 
-RUN npm run build
+RUN npx turbo run build --filter=frontend
 
-# Production image
-FROM base AS runner
+# --- Runner Stage ---
+FROM node:20-alpine AS runner
+
 WORKDIR /app
 
 ENV NODE_ENV=production
@@ -27,10 +26,12 @@ ENV NODE_ENV=production
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
-# Copy built application
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/.next/standalone ./
-COPY --from=builder /app/.next/static ./.next/static
+# Copy public assets to the correct nested location
+COPY --from=builder /app/apps/frontend/public ./apps/frontend/public
+
+# Copy the standalone build
+COPY --from=builder --chown=nextjs:nodejs /app/apps/frontend/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/apps/frontend/.next/static ./apps/frontend/.next/static
 
 USER nextjs
 
@@ -39,4 +40,4 @@ EXPOSE 3001
 ENV PORT 3001
 ENV HOSTNAME "0.0.0.0"
 
-CMD ["node", "server.js"]
+CMD ["node", "apps/frontend/server.js"]
