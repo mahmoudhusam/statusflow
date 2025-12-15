@@ -11,9 +11,24 @@ async function bootstrap() {
   console.log('🔍 FRONTEND_URL from env:', process.env.FRONTEND_URL);
   console.log('🔍 NODE_ENV:', process.env.NODE_ENV);
 
+  // CORS configuration - allow only the frontend URL
+  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3001';
   app.enableCors({
-    origin: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    origin: (origin, callback) => {
+      const allowedOrigins = [process.env.FRONTEND_URL];
+
+      // Allow server-to-server & tools like curl
+      if (!origin) {
+        return callback(null, true);
+      }
+
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+
+      return callback(new Error('Not allowed by CORS'), false);
+    },
+    methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true,
   });
