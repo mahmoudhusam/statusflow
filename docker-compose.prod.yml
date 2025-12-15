@@ -55,7 +55,7 @@ services:
       - NODE_ENV=production
       - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
     depends_on:
-      - backend:
+      - backend
     networks:
       - statusflow
 
