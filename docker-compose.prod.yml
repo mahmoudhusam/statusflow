@@ -35,6 +35,12 @@ services:
       - redis
     networks:
       - statusflow
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
   frontend:
     build:
@@ -49,7 +55,8 @@ services:
       - NODE_ENV=production
       - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     networks:
       - statusflow
 
