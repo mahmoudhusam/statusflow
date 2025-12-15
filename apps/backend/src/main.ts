@@ -22,7 +22,7 @@ async function bootstrap() {
       return callback(new Error('CORS policy violation'), false);
     },
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Access-Control-Allow-Origin'],
     credentials: true,
   });
 
