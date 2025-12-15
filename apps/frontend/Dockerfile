@@ -1,40 +1,36 @@
 FROM node:20-alpine AS builder
-
 WORKDIR /app
 
-# Copy the entire monorepo
 COPY . .
 
-# Increase timeout and retries to prevent ECONNRESET
 RUN npm config set fetch-retry-maxtimeout 600000 \
     && npm config set fetch-retries 5 \
     && npm ci
 
-# Build the frontend
 ARG NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 
-RUN npx turbo run build --filter=frontend
+# Build + normalize Next static output into /app/__next_static
+RUN npx turbo run build --filter=frontend \
+    && mkdir -p /app/__next_static \
+    && if [ -d /app/apps/frontend/.next/static ]; then cp -a /app/apps/frontend/.next/static/. /app/__next_static/; \
+    elif [ -d /app/.next/static ]; then cp -a /app/.next/static/. /app/__next_static/; \
+    else echo "ERROR: .next/static not found"; find /app -maxdepth 5 -type d -name static -o -name standalone; exit 1; fi
 
-# --- Runner Stage ---
 FROM node:20-alpine AS runner
-
 WORKDIR /app
 
 ENV NODE_ENV=production
-
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
-# Copy public assets to the correct nested location
 COPY --from=builder /app/apps/frontend/public ./apps/frontend/public
-
-# Copy the standalone build
 COPY --from=builder --chown=nextjs:nodejs /app/apps/frontend/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/apps/frontend/.next/static ./apps/frontend/.next/static
+
+# Copy normalized static output (this is what was failing on Coolify)
+COPY --from=builder --chown=nextjs:nodejs /app/__next_static ./apps/frontend/.next/static
 
 USER nextjs
-
 EXPOSE 3001
 
 ENV PORT 3001
