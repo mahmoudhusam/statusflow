@@ -12,23 +12,7 @@ async function bootstrap() {
   console.log('🔍 NODE_ENV:', process.env.NODE_ENV);
 
   app.enableCors({
-    origin: (origin, callback) => {
-      const allowedOrigins = [
-        process.env.FRONTEND_URL,
-        'http://kc4scckgoowc4o40wks44w0s.95.216.198.118.sslip.io', // Add your frontend explicitly
-      ].filter(Boolean); // Remove undefined values
-
-      if (!origin) {
-        return callback(null, true);
-      }
-      if (allowedOrigins.includes(origin)) {
-        console.log('✅ Origin allowed');
-        return callback(null, true);
-      }
-
-      console.log('❌ Origin blocked');
-      return callback(new Error('CORS policy violation'), false);
-    },
+    origin: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true,
