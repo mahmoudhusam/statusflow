@@ -9,14 +9,28 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   // Debug: Log environment variables
   console.log('🔍 Environment check:');
-  console.log('  FRONTEND_URL:', process.env.FRONTEND_URL);
+  console.log('  FRONTEND_URL (raw):', process.env.FRONTEND_URL);
   console.log('  NODE_ENV:', process.env.NODE_ENV);
 
   // CORS configuration
-  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3001';
+  let frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3001';
+
+  // Clean up the URL: remove quotes and trailing slashes
+  frontendUrl = frontendUrl.replace(/^['"]|['"]$/g, '').replace(/\/$/, '');
+
+  const allowedOrigins = [frontendUrl];
+
+  // Allow both http and https versions of the frontend URL to handle protocol mismatches
+  if (frontendUrl.startsWith('http://')) {
+    allowedOrigins.push(frontendUrl.replace('http://', 'https://'));
+  } else if (frontendUrl.startsWith('https://')) {
+    allowedOrigins.push(frontendUrl.replace('https://', 'http://'));
+  }
+
+  console.log('🔒 Configured CORS origins:', allowedOrigins);
 
   app.enableCors({
-    origin: [frontendUrl],
+    origin: allowedOrigins,
     methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true,
@@ -56,6 +70,6 @@ async function bootstrap() {
   const port = process.env.PORT || 3000;
   await app.listen(port);
   console.log(`🚀 Backend running on http://localhost:${port}`);
-  console.log(`🔒 CORS enabled for: ${frontendUrl}`);
+  console.log(`🔒 CORS enabled for: ${allowedOrigins.join(', ')}`);
 }
 bootstrap();
