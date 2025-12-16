@@ -12,12 +12,12 @@ async function bootstrap() {
   console.log('  FRONTEND_URL (raw):', process.env.FRONTEND_URL);
   console.log('  NODE_ENV:', process.env.NODE_ENV);
 
-  // CORS configuration
-  const frontendUrl = process.env.FRONTEND_URL;
-
+  // CORS configuration - with fallback to prevent crashes
+  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3001';
 
   const allowedOrigins = [frontendUrl];
 
+  // Allow both http and https versions
   if (frontendUrl.startsWith('http://')) {
     allowedOrigins.push(frontendUrl.replace('http://', 'https://'));
   } else if (frontendUrl.startsWith('https://')) {
@@ -65,8 +65,9 @@ async function bootstrap() {
   }
 
   const port = process.env.PORT || 3000;
-  await app.listen(port);
-  console.log(`🚀 Backend running on http://localhost:${port}`);
+  const host = '0.0.0.0'; // <-- THIS IS THE KEY FIX
+  await app.listen(port, host);
+  console.log(`🚀 Backend running on http://${host}:${port}`);
   console.log(`🔒 CORS enabled for: ${allowedOrigins.join(', ')}`);
 }
 bootstrap();
