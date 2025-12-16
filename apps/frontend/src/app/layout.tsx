@@ -31,6 +31,12 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Debug: Log API URL on server start/render
+  if (typeof window === 'undefined') {
+    console.log('🚀 Frontend Server Config:');
+    console.log('   NEXT_PUBLIC_API_URL:', process.env.NEXT_PUBLIC_API_URL);
+  }
+
   return (
     <html lang="en" suppressHydrationWarning>
       <body

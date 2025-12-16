@@ -28,4 +28,4 @@ USER nestjs
 EXPOSE 3000
 
 # Check where main.js is and run it
-CMD ["sh", "-c", "node dist/main.js || node dist/src/main.js"]
+CMD ["node", "dist/src/main.js"]
