@@ -13,14 +13,11 @@ async function bootstrap() {
   console.log('  NODE_ENV:', process.env.NODE_ENV);
 
   // CORS configuration
-  let frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3001';
+  const frontendUrl = process.env.FRONTEND_URL;
 
-  // Clean up the URL: remove quotes and trailing slashes
-  frontendUrl = frontendUrl.replace(/^['"]|['"]$/g, '').replace(/\/$/, '');
 
   const allowedOrigins = [frontendUrl];
 
-  // Allow both http and https versions of the frontend URL to handle protocol mismatches
   if (frontendUrl.startsWith('http://')) {
     allowedOrigins.push(frontendUrl.replace('http://', 'https://'));
   } else if (frontendUrl.startsWith('https://')) {
