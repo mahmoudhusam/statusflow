@@ -8,26 +8,11 @@ import { ExpressAdapter } from '@bull-board/express';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  console.log('🔍 FRONTEND_URL from env:', process.env.FRONTEND_URL);
-  console.log('🔍 NODE_ENV:', process.env.NODE_ENV);
-
-  // CORS configuration - allow only the frontend URL
+  // CORS configuration
   const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3001';
+
   app.enableCors({
-    origin: (origin, callback) => {
-      const allowedOrigins = [process.env.FRONTEND_URL];
-
-      // Allow server-to-server & tools like curl
-      if (!origin) {
-        return callback(null, true);
-      }
-
-      if (allowedOrigins.includes(origin)) {
-        return callback(null, true);
-      }
-
-      return callback(new Error('Not allowed by CORS'), false);
-    },
+    origin: [frontendUrl],
     methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true,
@@ -41,7 +26,7 @@ async function bootstrap() {
     }),
   );
 
-  //Add Bull Dashboard for queue monitoring
+  // Add Bull Dashboard for queue monitoring
   if (process.env.NODE_ENV === 'development') {
     const { Queue } = await import('bullmq');
     const monitorQueue = new Queue('monitor-checks', {
@@ -67,5 +52,6 @@ async function bootstrap() {
   const port = process.env.PORT || 3000;
   await app.listen(port);
   console.log(`🚀 Backend running on http://localhost:${port}`);
+  console.log(`🔒 CORS enabled for: ${frontendUrl}`);
 }
 bootstrap();
