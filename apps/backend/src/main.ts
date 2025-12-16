@@ -7,6 +7,10 @@ import { ExpressAdapter } from '@bull-board/express';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  // Debug: Log environment variables
+  console.log('🔍 Environment check:');
+  console.log('  FRONTEND_URL:', process.env.FRONTEND_URL);
+  console.log('  NODE_ENV:', process.env.NODE_ENV);
 
   // CORS configuration
   const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3001';
