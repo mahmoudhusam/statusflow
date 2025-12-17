@@ -5,14 +5,14 @@ services:
     command: redis-server --appendonly yes
     volumes:
       - redis_data:/data
+    networks:
+      - default
 
   backend:
     build:
       context: .
       dockerfile: apps/backend/Dockerfile
     restart: always
-    expose:
-      - "3000"
     environment:
       - NODE_ENV=production
       - DB_HOST=${DB_HOST}
@@ -31,6 +31,14 @@ services:
       - FRONTEND_URL=${FRONTEND_URL}
     depends_on:
       - redis
+    networks:
+      - default
+      - coolify
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.backend.rule=Host(`${SERVICE_FQDN_BACKEND}`)
+      - traefik.http.routers.backend.entrypoints=http
+      - traefik.http.services.backend.loadbalancer.server.port=3000
 
   frontend:
     build:
@@ -39,13 +47,23 @@ services:
       args:
         - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
     restart: always
-    expose:
-      - "3001"
     environment:
       - NODE_ENV=production
       - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
     depends_on:
       - backend
+    networks:
+      - default
+      - coolify
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.frontend.rule=Host(`${SERVICE_FQDN_FRONTEND}`)
+      - traefik.http.routers.frontend.entrypoints=http
+      - traefik.http.services.frontend.loadbalancer.server.port=3001
 
 volumes:
   redis_data:
+
+networks:
+  coolify:
+    external: true
