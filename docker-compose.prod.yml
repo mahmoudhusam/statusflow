@@ -31,6 +31,14 @@ services:
       - FRONTEND_URL=${FRONTEND_URL}
     depends_on:
       - redis
+    networks:
+      - coolify
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.statusflow-backend.rule=Host(`${SERVICE_FQDN_BACKEND}`)"
+      - "traefik.http.routers.statusflow-backend.entrypoints=http"
+      - "traefik.http.services.statusflow-backend.loadbalancer.server.port=3000"
+      - "traefik.docker.network=coolify"
 
   frontend:
     build:
@@ -46,6 +54,19 @@ services:
       - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
     depends_on:
       - backend
+    networks:
+      - coolify
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.statusflow-frontend.rule=Host(`${SERVICE_FQDN_FRONTEND}`)"
+      - "traefik.http.routers.statusflow-frontend.entrypoints=http"
+      - "traefik.http.services.statusflow-frontend.loadbalancer.server.port=3001"
+      - "traefik.docker.network=coolify"
 
 volumes:
   redis_data:
+
+
+networks:
+  coolify:
+    external: true
