@@ -7,10 +7,6 @@ import { ExpressAdapter } from '@bull-board/express';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  // Debug: Log environment variables
-  console.log('🔍 Environment check:');
-  console.log('  FRONTEND_URL (raw):', process.env.FRONTEND_URL);
-  console.log('  NODE_ENV:', process.env.NODE_ENV);
 
   // CORS configuration - with fallback to prevent crashes
   const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3001';
@@ -23,8 +19,6 @@ async function bootstrap() {
   } else if (frontendUrl.startsWith('https://')) {
     allowedOrigins.push(frontendUrl.replace('https://', 'http://'));
   }
-
-  console.log('🔒 Configured CORS origins:', allowedOrigins);
 
   app.enableCors({
     origin: allowedOrigins,
@@ -65,8 +59,8 @@ async function bootstrap() {
   }
 
   const port = process.env.PORT || 3000;
-  const host = '0.0.0.0'; // <-- THIS IS THE KEY FIX
-  await app.listen(port);
+  const host = '0.0.0.0';
+  await app.listen(port, host);
   console.log(`🚀 Backend running on http://${host}:${port}`);
   console.log(`🔒 CORS enabled for: ${allowedOrigins.join(', ')}`);
 }
