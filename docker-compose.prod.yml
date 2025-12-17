@@ -33,6 +33,7 @@ services:
       - redis
     networks:
       - statusflow
+      - coolify
 
   frontend:
     build:
@@ -48,6 +49,7 @@ services:
       - backend
     networks:
       - statusflow
+      - coolify
 
 volumes:
   redis_data:
@@ -55,3 +57,5 @@ volumes:
 networks:
   statusflow:
     driver: bridge
+  coolify:
+    external: true
