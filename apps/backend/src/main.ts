@@ -66,7 +66,7 @@ async function bootstrap() {
 
   const port = process.env.PORT || 3000;
   const host = '0.0.0.0'; // <-- THIS IS THE KEY FIX
-  await app.listen(port, host);
+  await app.listen(port);
   console.log(`🚀 Backend running on http://${host}:${port}`);
   console.log(`🔒 CORS enabled for: ${allowedOrigins.join(', ')}`);
 }
