@@ -14,7 +14,7 @@ export function middleware(request: NextRequest) {
   const isProtectedRoute = pathname.startsWith('/dashboard');
 
   if (isAuthenticated && isAuthRoute) {
-    return NextResponse.redirect(new URL('/dashboard/monitors', request.url));
+    return NextResponse.redirect(new URL('/dashboard', request.url));
   }
 
   if (!isAuthenticated && isProtectedRoute) {

@@ -156,7 +156,7 @@ function AuthProviderInner({ children }: AuthProviderProps) {
         setUser(userData);
 
         // Redirect
-        const destination = redirectTo || '/dashboard/monitors';
+        const destination = redirectTo || '/dashboard';
         router.push(destination);
       } catch (error) {
         console.error('Login failed:', error);

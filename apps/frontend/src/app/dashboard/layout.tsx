@@ -26,7 +26,7 @@ export default function DashboardLayout({
               {/* Logo and Main Nav */}
               <div className="flex items-center gap-8">
                 <Link
-                  href="/dashboard/monitors"
+                  href="/dashboard"
                   className="flex items-center gap-3"
                 >
                   <Image
@@ -40,6 +40,31 @@ export default function DashboardLayout({
 
                 {/* Desktop Navigation */}
                 <div className="hidden md:flex gap-1">
+                  <Link
+                    href="/dashboard"
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                      pathname === '/dashboard'
+                        ? 'bg-blue-50 text-blue-700'
+                        : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+                        />
+                      </svg>
+                      Dashboard
+                    </div>
+                  </Link>
                   <Link
                     href="/dashboard/monitors"
                     className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
@@ -181,6 +206,32 @@ export default function DashboardLayout({
           {mobileMenuOpen && (
             <div className="md:hidden border-t border-gray-200 bg-white">
               <div className="px-4 py-3 space-y-2">
+                <Link
+                  href="/dashboard"
+                  className={`block px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
+                    pathname === '/dashboard'
+                      ? 'bg-blue-50 text-blue-700'
+                      : 'text-gray-600 hover:bg-gray-50'
+                  }`}
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <div className="flex items-center gap-2">
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+                      />
+                    </svg>
+                    Dashboard
+                  </div>
+                </Link>
                 <Link
                   href="/dashboard/monitors"
                   className={`block px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
