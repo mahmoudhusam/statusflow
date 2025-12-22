@@ -100,10 +100,12 @@ describe('DashboardService', () => {
       monitorRepository.find.mockResolvedValue(mockMonitors);
 
       const mockQb = checkResultRepository.createQueryBuilder();
-      // First call for uptime/avgResponseTime
+      // First call for uptime/avgResponseTime/check counts
       mockQb.getRawOne.mockResolvedValue({
         uptime: '99.5',
         avgResponseTime: '245.5',
+        successfulChecks: '995',
+        failedChecks: '5',
       });
       // Second call for latest checks (all monitors are up)
       mockQb.getRawMany.mockResolvedValue([
@@ -122,6 +124,8 @@ describe('DashboardService', () => {
       expect(result.activeIncidents).toBe(0);
       expect(result.criticalIncidents).toBe(0);
       expect(result.warningIncidents).toBe(0);
+      expect(result.successfulChecks).toBe(995);
+      expect(result.failedChecks).toBe(5);
     });
 
     it('should count active incidents from currently down monitors', async () => {
@@ -131,6 +135,8 @@ describe('DashboardService', () => {
       mockQb.getRawOne.mockResolvedValue({
         uptime: '95.0',
         avgResponseTime: '300',
+        successfulChecks: '950',
+        failedChecks: '50',
       });
       // One monitor is currently down
       mockQb.getRawMany.mockResolvedValue([
@@ -162,6 +168,8 @@ describe('DashboardService', () => {
       mockQb.getRawOne.mockResolvedValue({
         uptime: '90.0',
         avgResponseTime: '500',
+        successfulChecks: '900',
+        failedChecks: '100',
       });
       mockQb.getRawMany.mockResolvedValue([
         { monitorId: 'monitor-1', isUp: false },

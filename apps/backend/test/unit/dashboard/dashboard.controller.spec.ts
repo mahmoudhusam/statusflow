@@ -17,6 +17,8 @@ describe('DashboardController', () => {
     activeIncidents: 2,
     criticalIncidents: 1,
     warningIncidents: 1,
+    successfulChecks: 1200,
+    failedChecks: 10,
   };
 
   const mockIncidents = [
@@ -114,6 +116,8 @@ describe('DashboardController', () => {
         activeIncidents: 0,
         criticalIncidents: 0,
         warningIncidents: 0,
+        successfulChecks: 0,
+        failedChecks: 0,
       };
 
       jest.spyOn(service, 'getStats').mockResolvedValue(emptyStats);

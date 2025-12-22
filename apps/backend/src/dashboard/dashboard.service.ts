@@ -49,17 +49,21 @@ export class DashboardService {
         activeIncidents: 0,
         criticalIncidents: 0,
         warningIncidents: 0,
+        successfulChecks: 0,
+        failedChecks: 0,
       };
     }
 
     const monitorIds = monitors.map((m) => m.id);
     const last24Hours = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
-    // Get uptime and response time stats from check results (last 24 hours)
+    // Get uptime, response time, and check counts from check results (last 24 hours)
     const checkStats = await this.checkResultRepository
       .createQueryBuilder('cr')
       .select('AVG(CASE WHEN cr.isUp THEN 100 ELSE 0 END)', 'uptime')
       .addSelect('AVG(cr.responseTime)', 'avgResponseTime')
+      .addSelect('SUM(CASE WHEN cr.isUp THEN 1 ELSE 0 END)', 'successfulChecks')
+      .addSelect('SUM(CASE WHEN cr.isUp THEN 0 ELSE 1 END)', 'failedChecks')
       .where('cr.monitorId IN (:...monitorIds)', { monitorIds })
       .andWhere('cr.createdAt >= :last24Hours', { last24Hours })
       .getRawOne();
@@ -70,6 +74,12 @@ export class DashboardService {
     const avgResponseTime = checkStats?.avgResponseTime
       ? Math.round(parseFloat(checkStats.avgResponseTime))
       : null;
+    const successfulChecks = checkStats?.successfulChecks
+      ? parseInt(checkStats.successfulChecks, 10)
+      : 0;
+    const failedChecks = checkStats?.failedChecks
+      ? parseInt(checkStats.failedChecks, 10)
+      : 0;
 
     // Get active incidents by checking which monitors are currently down
     // A monitor is "currently down" if its most recent check result is isUp = false
@@ -132,6 +142,8 @@ export class DashboardService {
       activeIncidents,
       criticalIncidents,
       warningIncidents,
+      successfulChecks,
+      failedChecks,
     };
   }
 

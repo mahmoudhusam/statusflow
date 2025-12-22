@@ -7,4 +7,6 @@ export class DashboardStatsDto {
   activeIncidents: number;
   criticalIncidents: number;
   warningIncidents: number;
+  successfulChecks: number; // last 24 hours
+  failedChecks: number; // last 24 hours
 }
