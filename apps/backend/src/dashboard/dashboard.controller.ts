@@ -1,4 +1,4 @@
-import { Controller, Get, Query, UseGuards, ParseIntPipe } from '@nestjs/common';
+import { Controller, Get, Query, UseGuards } from '@nestjs/common';
 import { JwtGuard } from '@/auth/guard';
 import { GetUser } from '@/auth/decorators/get-user.decorator';
 import { DashboardService } from './dashboard.service';
@@ -46,6 +46,12 @@ export class DashboardController {
       userId,
       hoursNum,
     );
+    return { success: true, data };
+  }
+
+  @Get('monitor-statuses')
+  async getMonitorStatuses(@GetUser('id') userId: string) {
+    const data = await this.dashboardService.getMonitorStatuses(userId);
     return { success: true, data };
   }
 }

@@ -7,12 +7,13 @@ import {
   AlertHistory,
   AlertStatus,
 } from '@/alert/entities/alert-history.entity';
-import { AlertSeverity } from '@/alert/entities/alert-rule.entity';
 import {
   DashboardStatsDto,
   DashboardIncidentDto,
   DashboardNotificationsDto,
   PerformanceTrendDto,
+  MonitorStatusDto,
+  MonitorStatusType,
 } from './dto';
 
 @Injectable()
@@ -70,33 +71,57 @@ export class DashboardService {
       ? Math.round(parseFloat(checkStats.avgResponseTime))
       : null;
 
-    // Get active incidents (triggered alerts)
-    const activeIncidents = await this.alertHistoryRepository.count({
-      where: {
-        monitorId: In(monitorIds),
-        status: AlertStatus.TRIGGERED,
-      },
-    });
+    // Get active incidents by checking which monitors are currently down
+    // A monitor is "currently down" if its most recent check result is isUp = false
+    const latestChecks = await this.checkResultRepository
+      .createQueryBuilder('cr')
+      .select('DISTINCT ON (cr.monitorId) cr.*')
+      .where('cr.monitorId IN (:...monitorIds)', { monitorIds })
+      .orderBy('cr.monitorId', 'ASC')
+      .addOrderBy('cr.createdAt', 'DESC')
+      .getRawMany();
 
-    // Get critical incidents count
-    const criticalIncidents = await this.alertHistoryRepository
-      .createQueryBuilder('ah')
-      .innerJoin('ah.alertRule', 'ar')
-      .where('ah.monitorId IN (:...monitorIds)', { monitorIds })
-      .andWhere('ah.status = :status', { status: AlertStatus.TRIGGERED })
-      .andWhere('ar.severity = :severity', { severity: AlertSeverity.CRITICAL })
-      .getCount();
+    // Count monitors that are currently down
+    const currentlyDownMonitors = latestChecks.filter((cr) => !cr.isUp);
+    const activeIncidents = currentlyDownMonitors.length;
 
-    // Get warning incidents count (medium and high severity)
-    const warningIncidents = await this.alertHistoryRepository
-      .createQueryBuilder('ah')
-      .innerJoin('ah.alertRule', 'ar')
-      .where('ah.monitorId IN (:...monitorIds)', { monitorIds })
-      .andWhere('ah.status = :status', { status: AlertStatus.TRIGGERED })
-      .andWhere('ar.severity IN (:...severities)', {
-        severities: [AlertSeverity.MEDIUM, AlertSeverity.HIGH],
-      })
-      .getCount();
+    // Critical = down for more than 5 minutes (check if first failure was > 5 min ago)
+    const CRITICAL_THRESHOLD_MS = 5 * 60 * 1000;
+    let criticalIncidents = 0;
+    let warningIncidents = 0;
+
+    for (const downMonitor of currentlyDownMonitors) {
+      // Find when this incident started (first consecutive failure)
+      const recentResults = await this.checkResultRepository.find({
+        where: {
+          monitorId: downMonitor.monitorId,
+          createdAt: MoreThanOrEqual(last24Hours),
+        },
+        order: { createdAt: 'DESC' },
+        take: 100,
+      });
+
+      // Find when the current downtime started (walk back until we find an 'up')
+      let incidentStart: Date | null = null;
+      for (const result of recentResults) {
+        if (result.isUp) {
+          break;
+        }
+        incidentStart = result.createdAt;
+      }
+
+      if (incidentStart) {
+        const duration = Date.now() - incidentStart.getTime();
+        if (duration >= CRITICAL_THRESHOLD_MS) {
+          criticalIncidents++;
+        } else {
+          warningIncidents++;
+        }
+      } else {
+        // Been down for entire period, count as critical
+        criticalIncidents++;
+      }
+    }
 
     return {
       totalMonitors,
@@ -115,10 +140,10 @@ export class DashboardService {
     limit: number = 10,
     sort: 'latest' | 'oldest' = 'latest',
   ): Promise<DashboardIncidentDto[]> {
-    // Get user's monitor IDs
+    // Get user's monitors with names
     const monitors = await this.monitorRepository.find({
       where: { user: { id: userId } },
-      select: ['id'],
+      select: ['id', 'name'],
     });
 
     if (monitors.length === 0) {
@@ -126,48 +151,95 @@ export class DashboardService {
     }
 
     const monitorIds = monitors.map((m) => m.id);
+    const monitorMap = new Map(monitors.map((m) => [m.id, m.name]));
 
-    // Get recent alerts (both triggered and resolved)
-    const alerts = await this.alertHistoryRepository.find({
+    // Get check results from the last 24 hours, ordered by monitor and time
+    const last24Hours = new Date(Date.now() - 24 * 60 * 60 * 1000);
+
+    const checkResults = await this.checkResultRepository.find({
       where: {
         monitorId: In(monitorIds),
+        createdAt: MoreThanOrEqual(last24Hours),
       },
-      relations: ['monitor', 'alertRule'],
       order: {
-        triggeredAt: sort === 'latest' ? 'DESC' : 'ASC',
+        monitorId: 'ASC',
+        createdAt: 'ASC',
       },
-      take: limit,
     });
 
-    return alerts.map((alert) => {
-      // Map severity to incident status
-      let status: 'critical' | 'warning' | 'resolved';
-      if (alert.status === AlertStatus.RESOLVED) {
-        status = 'resolved';
-      } else if (alert.alertRule?.severity === AlertSeverity.CRITICAL) {
-        status = 'critical';
-      } else {
-        status = 'warning';
+    // Group results by monitor
+    const resultsByMonitor = new Map<string, typeof checkResults>();
+    for (const result of checkResults) {
+      const existing = resultsByMonitor.get(result.monitorId) || [];
+      existing.push(result);
+      resultsByMonitor.set(result.monitorId, existing);
+    }
+
+    // Detect incidents from consecutive failures
+    const incidents: DashboardIncidentDto[] = [];
+
+    for (const [monitorId, results] of resultsByMonitor) {
+      let incidentStart: Date | null = null;
+      let incidentFirstError: string | null = null;
+
+      for (let i = 0; i < results.length; i++) {
+        const current = results[i];
+        const next = results[i + 1];
+
+        if (!current.isUp && incidentStart === null) {
+          // Start of a new incident
+          incidentStart = current.createdAt;
+          incidentFirstError = current.errorMessage || 'Monitor is down';
+        }
+
+        if (incidentStart !== null) {
+          // Check if incident ends
+          const isResolved = current.isUp;
+          const isLastResult = !next;
+
+          if (isResolved || isLastResult) {
+            const resolvedAt = isResolved ? current.createdAt : null;
+            const endTime = resolvedAt ? resolvedAt.getTime() : Date.now();
+            const duration = endTime - incidentStart.getTime();
+
+            // Determine severity based on duration
+            // Critical if down for more than 5 minutes, warning otherwise
+            const CRITICAL_THRESHOLD_MS = 5 * 60 * 1000;
+            let status: 'critical' | 'warning' | 'resolved';
+            if (isResolved) {
+              status = 'resolved';
+            } else if (duration >= CRITICAL_THRESHOLD_MS) {
+              status = 'critical';
+            } else {
+              status = 'warning';
+            }
+
+            incidents.push({
+              id: `${monitorId}-${incidentStart.getTime()}`,
+              monitorId,
+              monitorName: monitorMap.get(monitorId) || null,
+              status,
+              duration,
+              startedAt: incidentStart,
+              resolvedAt,
+              message: incidentFirstError || 'Monitor was unreachable',
+            });
+
+            incidentStart = null;
+            incidentFirstError = null;
+          }
+        }
       }
+    }
 
-      // Calculate duration
-      const startTime = alert.triggeredAt.getTime();
-      const endTime = alert.resolvedAt
-        ? alert.resolvedAt.getTime()
-        : Date.now();
-      const duration = endTime - startTime;
-
-      return {
-        id: alert.id,
-        monitorId: alert.monitorId ?? null,
-        monitorName: alert.monitor?.name ?? null,
-        status,
-        duration,
-        startedAt: alert.triggeredAt,
-        resolvedAt: alert.resolvedAt ?? null,
-        message: alert.message,
-      };
+    // Sort incidents
+    incidents.sort((a, b) => {
+      const timeA = a.startedAt.getTime();
+      const timeB = b.startedAt.getTime();
+      return sort === 'latest' ? timeB - timeA : timeA - timeB;
     });
+
+    return incidents.slice(0, limit);
   }
 
   async getNotifications(userId: string): Promise<DashboardNotificationsDto> {
@@ -199,7 +271,7 @@ export class DashboardService {
     });
 
     // For now, treat all triggered alerts as "unread" and resolved as "read"
-    // In a real implementation, you'd have a separate read/unread tracking
+    // In a real implementation, i will separate read/unread tracking
     const unreadCount = alerts.filter(
       (a) => a.status === AlertStatus.TRIGGERED,
     ).length;
@@ -235,11 +307,12 @@ export class DashboardService {
     const monitorIds = monitors.map((m) => m.id);
     const startTime = new Date(Date.now() - hours * 60 * 60 * 1000);
 
-    // Get check results grouped by hour
+    // Get check results grouped by hour, including response time
     const results = await this.checkResultRepository
       .createQueryBuilder('cr')
       .select("DATE_TRUNC('hour', cr.createdAt)", 'hour')
       .addSelect('AVG(CASE WHEN cr.isUp THEN 100 ELSE 0 END)', 'uptime')
+      .addSelect('AVG(cr.responseTime)', 'avgResponseTime')
       .where('cr.monitorId IN (:...monitorIds)', { monitorIds })
       .andWhere('cr.createdAt >= :startTime', { startTime })
       .groupBy("DATE_TRUNC('hour', cr.createdAt)")
@@ -249,6 +322,65 @@ export class DashboardService {
     return results.map((row) => ({
       timestamp: new Date(row.hour),
       uptime: parseFloat(parseFloat(row.uptime).toFixed(2)),
+      avgResponseTime: row.avgResponseTime
+        ? Math.round(parseFloat(row.avgResponseTime))
+        : null,
     }));
+  }
+
+  async getMonitorStatuses(userId: string): Promise<MonitorStatusDto[]> {
+    // Get user's monitors
+    const monitors = await this.monitorRepository.find({
+      where: { user: { id: userId } },
+      select: ['id', 'name', 'url', 'paused', 'lastCheckedAt', 'maxLatencyMs'],
+    });
+
+    if (monitors.length === 0) {
+      return [];
+    }
+
+    const monitorIds = monitors.map((m) => m.id);
+
+    // Get the latest check result for each monitor
+    const latestChecks = await this.checkResultRepository
+      .createQueryBuilder('cr')
+      .select('DISTINCT ON (cr.monitorId) cr.*')
+      .where('cr.monitorId IN (:...monitorIds)', { monitorIds })
+      .orderBy('cr.monitorId', 'ASC')
+      .addOrderBy('cr.createdAt', 'DESC')
+      .getRawMany();
+
+    // Create a map of monitorId -> latest check
+    const checkMap = new Map(
+      latestChecks.map((c) => [c.monitorId, c]),
+    );
+
+    return monitors.map((monitor) => {
+      const latestCheck = checkMap.get(monitor.id);
+
+      let status: MonitorStatusType;
+      if (monitor.paused) {
+        status = 'paused';
+      } else if (!latestCheck) {
+        status = 'paused'; // No checks yet, treat as paused
+      } else if (!latestCheck.isUp) {
+        status = 'down';
+      } else if (latestCheck.responseTime > monitor.maxLatencyMs) {
+        status = 'slow';
+      } else {
+        status = 'up';
+      }
+
+      return {
+        id: monitor.id,
+        name: monitor.name,
+        url: monitor.url,
+        status,
+        lastCheckedAt: latestCheck?.createdAt
+          ? new Date(latestCheck.createdAt)
+          : null,
+        responseTime: latestCheck?.responseTime ?? null,
+      };
+    });
   }
 }

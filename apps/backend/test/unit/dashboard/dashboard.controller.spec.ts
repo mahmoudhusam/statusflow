@@ -63,9 +63,9 @@ describe('DashboardController', () => {
   };
 
   const mockPerformanceTrends = [
-    { timestamp: new Date('2024-01-01T10:00:00Z'), uptime: 100 },
-    { timestamp: new Date('2024-01-01T11:00:00Z'), uptime: 98.5 },
-    { timestamp: new Date('2024-01-01T12:00:00Z'), uptime: 99.25 },
+    { timestamp: new Date('2024-01-01T10:00:00Z'), uptime: 100, avgResponseTime: 150 },
+    { timestamp: new Date('2024-01-01T11:00:00Z'), uptime: 98.5, avgResponseTime: 200 },
+    { timestamp: new Date('2024-01-01T12:00:00Z'), uptime: 99.25, avgResponseTime: null },
   ];
 
   beforeEach(async () => {
@@ -74,6 +74,7 @@ describe('DashboardController', () => {
       getIncidents: jest.fn(),
       getNotifications: jest.fn(),
       getPerformanceTrends: jest.fn(),
+      getMonitorStatuses: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -254,6 +255,52 @@ describe('DashboardController', () => {
       jest.spyOn(service, 'getPerformanceTrends').mockResolvedValue([]);
 
       const result = await controller.getPerformanceTrends(mockUserId);
+
+      expect(result).toEqual({
+        success: true,
+        data: [],
+      });
+    });
+  });
+
+  describe('GET /dashboard/monitor-statuses', () => {
+    const mockMonitorStatuses = [
+      {
+        id: 'monitor-1',
+        name: 'API Server',
+        url: 'https://api.example.com',
+        status: 'up' as const,
+        lastCheckedAt: new Date('2024-01-01T12:00:00Z'),
+        responseTime: 150,
+      },
+      {
+        id: 'monitor-2',
+        name: 'Web Server',
+        url: 'https://web.example.com',
+        status: 'down' as const,
+        lastCheckedAt: new Date('2024-01-01T12:00:00Z'),
+        responseTime: null,
+      },
+    ];
+
+    it('should return monitor statuses wrapped in success response', async () => {
+      jest
+        .spyOn(service, 'getMonitorStatuses')
+        .mockResolvedValue(mockMonitorStatuses);
+
+      const result = await controller.getMonitorStatuses(mockUserId);
+
+      expect(service.getMonitorStatuses).toHaveBeenCalledWith(mockUserId);
+      expect(result).toEqual({
+        success: true,
+        data: mockMonitorStatuses,
+      });
+    });
+
+    it('should return empty array when no monitors', async () => {
+      jest.spyOn(service, 'getMonitorStatuses').mockResolvedValue([]);
+
+      const result = await controller.getMonitorStatuses(mockUserId);
 
       expect(result).toEqual({
         success: true,
