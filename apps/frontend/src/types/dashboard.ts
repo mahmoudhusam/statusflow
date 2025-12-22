@@ -7,6 +7,8 @@ export type DashboardStats = {
   activeIncidents: number;
   criticalIncidents: number;
   warningIncidents: number;
+  successfulChecks: number;
+  failedChecks: number;
 };
 
 export type IncidentStatus = 'critical' | 'warning' | 'resolved';

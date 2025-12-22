@@ -12,6 +12,7 @@ import { SystemNotifications } from './components/SystemNotifications';
 import { PerformanceTrends } from './components/PerformanceTrends';
 import { ResponseTimeTrends } from './components/ResponseTimeTrends';
 import { MonitorStatusGrid } from './components/MonitorStatusGrid';
+import { CheckStatusChart } from './components/CheckStatusChart';
 import type {
   DashboardStats,
   DashboardIncident,
@@ -240,9 +241,15 @@ export function DashboardClient() {
           <ResponseTimeTrends trends={trends} />
         </div>
 
-        {/* Quick Actions */}
-        <div>
+        {/* Quick Actions and Check Status */}
+        <div className="space-y-6">
           <QuickActions />
+          {stats && (
+            <CheckStatusChart
+              successfulChecks={stats.successfulChecks}
+              failedChecks={stats.failedChecks}
+            />
+          )}
         </div>
       </div>
 
