@@ -14,9 +14,10 @@ ChartJS.register(ArcElement, Tooltip, Legend);
 interface CheckStatusChartProps {
   successfulChecks: number;
   failedChecks: number;
+  variant?: 'default' | 'compact';
 }
 
-export function CheckStatusChart({ successfulChecks, failedChecks }: CheckStatusChartProps) {
+export function CheckStatusChart({ successfulChecks, failedChecks, variant = 'default' }: CheckStatusChartProps) {
   const totalChecks = successfulChecks + failedChecks;
 
   const chartData = useMemo(() => {
@@ -33,15 +34,17 @@ export function CheckStatusChart({ successfulChecks, failedChecks }: CheckStatus
     };
   }, [successfulChecks, failedChecks]);
 
+  const legendPosition: 'right' | 'bottom' = variant === 'compact' ? 'right' : 'bottom';
+
   const options = {
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
       legend: {
-        position: 'bottom' as const,
+        position: legendPosition,
         labels: {
           usePointStyle: true,
-          padding: 20,
+          padding: variant === 'compact' ? 15 : 20,
           font: {
             size: 12,
           },
@@ -65,13 +68,15 @@ export function CheckStatusChart({ successfulChecks, failedChecks }: CheckStatus
     cutout: '60%',
   };
 
+  const successRate = totalChecks > 0 ? ((successfulChecks / totalChecks) * 100).toFixed(1) : '0';
+
   if (totalChecks === 0) {
     return (
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 w-full">
         <h2 className="text-lg font-semibold text-gray-900 mb-4">
           Check Status (24h)
         </h2>
-        <div className="h-64 flex items-center justify-center">
+        <div className={`${variant === 'compact' ? 'h-32' : 'h-64'} flex items-center justify-center`}>
           <div className="text-center">
             <div className="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-3">
               <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -88,10 +93,49 @@ export function CheckStatusChart({ successfulChecks, failedChecks }: CheckStatus
     );
   }
 
-  const successRate = ((successfulChecks / totalChecks) * 100).toFixed(1);
+  // Compact variant - fits in fixed height container
+  if (variant === 'compact') {
+    return (
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 h-full flex flex-col">
+        <div className="flex items-center justify-between mb-2 flex-shrink-0">
+          <h2 className="text-base font-semibold text-gray-900">
+            Check Status (24h)
+          </h2>
+          <span className={`text-sm font-medium ${
+            Number(successRate) >= 99 ? 'text-green-600' : Number(successRate) >= 95 ? 'text-yellow-600' : 'text-red-600'
+          }`}>
+            {successRate}%
+          </span>
+        </div>
+        <div className="flex items-center gap-4 flex-1 min-h-0">
+          {/* Chart - smaller */}
+          <div className="h-[100px] w-[100px] relative flex-shrink-0">
+            <Doughnut data={chartData} options={{...options, plugins: {...options.plugins, legend: {display: false}}}} />
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <div className="text-center">
+                <p className="text-sm font-bold text-gray-900">{totalChecks.toLocaleString()}</p>
+              </div>
+            </div>
+          </div>
+          {/* Stats - vertical compact */}
+          <div className="flex-1 flex flex-col gap-2">
+            <div className="flex items-center justify-between p-2 bg-green-50 rounded-lg">
+              <span className="text-xs text-green-700">Successful</span>
+              <span className="text-sm font-bold text-green-600">{successfulChecks.toLocaleString()}</span>
+            </div>
+            <div className="flex items-center justify-between p-2 bg-red-50 rounded-lg">
+              <span className="text-xs text-red-700">Failed</span>
+              <span className="text-sm font-bold text-red-600">{failedChecks.toLocaleString()}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
+  // Default variant - vertical layout
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 w-full">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-semibold text-gray-900">
           Check Status (24h)

@@ -125,21 +125,18 @@ export function ResponseTimeTrends({ trends }: ResponseTimeTrendsProps) {
 
   if (trends.length === 0) {
     return (
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">
-          Response Time Trends (24h)
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 h-full flex flex-col">
+        <h2 className="text-base font-semibold text-gray-900 mb-2">
+          Response Time (24h)
         </h2>
-        <div className="h-64 flex items-center justify-center">
+        <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
-            <div className="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-3">
-              <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="w-10 h-10 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-2">
+              <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
               </svg>
             </div>
-            <p className="text-gray-600 font-medium">No data available</p>
-            <p className="text-sm text-gray-500 mt-1">
-              Response time data will appear once your monitors start running
-            </p>
+            <p className="text-sm text-gray-600 font-medium">No data available</p>
           </div>
         </div>
       </div>
@@ -152,21 +149,18 @@ export function ResponseTimeTrends({ trends }: ResponseTimeTrendsProps) {
     : 0;
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-semibold text-gray-900">
-          Response Time Trends (24h)
+    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 h-full flex flex-col">
+      <div className="flex items-center justify-between mb-2 flex-shrink-0">
+        <h2 className="text-base font-semibold text-gray-900">
+          Response Time (24h)
         </h2>
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-gray-500">Avg:</span>
-          <span className={`text-sm font-medium ${
-            avgResponseTime <= 200 ? 'text-green-600' : avgResponseTime <= 500 ? 'text-yellow-600' : 'text-red-600'
-          }`}>
-            {Math.round(avgResponseTime)}ms
-          </span>
-        </div>
+        <span className={`text-sm font-medium ${
+          avgResponseTime <= 200 ? 'text-green-600' : avgResponseTime <= 500 ? 'text-yellow-600' : 'text-red-600'
+        }`}>
+          {Math.round(avgResponseTime)}ms
+        </span>
       </div>
-      <div className="h-64">
+      <div className="flex-1 min-h-0">
         <Line data={chartData} options={options} />
       </div>
     </div>
