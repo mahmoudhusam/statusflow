@@ -106,20 +106,27 @@ export function DashboardClient() {
 
   if (loading) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="mb-8">
-          <div className="h-8 bg-gray-200 rounded w-48 animate-pulse mb-2"></div>
-          <div className="h-4 bg-gray-200 rounded w-64 animate-pulse"></div>
+      <div className="container mx-auto px-4 py-6">
+        {/* Header skeleton */}
+        <div className="mb-4">
+          <div className="h-7 bg-gray-200 rounded w-36 animate-pulse mb-1"></div>
+          <div className="h-4 bg-gray-200 rounded w-72 animate-pulse"></div>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        {/* Stats cards skeleton */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-3">
           <SkeletonLoader variant="metric" count={4} />
         </div>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2">
-            <SkeletonLoader variant="chart" />
-          </div>
-          <div>
-            <SkeletonLoader variant="card" />
+        {/* Charts skeleton */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 mb-3">
+          <SkeletonLoader variant="chart" count={3} />
+        </div>
+        {/* Quick actions skeleton */}
+        <div className="bg-white p-4 rounded-lg border border-gray-200 mb-6">
+          <div className="h-4 bg-gray-300 rounded w-28 animate-pulse mb-3"></div>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="h-10 bg-gray-200 rounded-lg animate-pulse"></div>
+            ))}
           </div>
         </div>
       </div>
