@@ -100,36 +100,49 @@ export class DashboardService {
     let criticalIncidents = 0;
     let warningIncidents = 0;
 
-    for (const downMonitor of currentlyDownMonitors) {
-      // Find when this incident started (first consecutive failure)
-      const recentResults = await this.checkResultRepository.find({
+    if (currentlyDownMonitors.length > 0) {
+      // OPTIMIZATION: Batch fetch all recent results for down monitors in ONE query
+      const downMonitorIds = currentlyDownMonitors.map((m) => m.monitorId);
+      const allRecentResults = await this.checkResultRepository.find({
         where: {
-          monitorId: downMonitor.monitorId,
+          monitorId: In(downMonitorIds),
           createdAt: MoreThanOrEqual(last24Hours),
         },
-        order: { createdAt: 'DESC' },
-        take: 100,
+        order: { monitorId: 'ASC', createdAt: 'DESC' },
       });
 
-      // Find when the current downtime started (walk back until we find an 'up')
-      let incidentStart: Date | null = null;
-      for (const result of recentResults) {
-        if (result.isUp) {
-          break;
-        }
-        incidentStart = result.createdAt;
+      // Group results by monitorId
+      const resultsByMonitor = new Map<string, CheckResult[]>();
+      for (const result of allRecentResults) {
+        const existing = resultsByMonitor.get(result.monitorId) || [];
+        existing.push(result);
+        resultsByMonitor.set(result.monitorId, existing);
       }
 
-      if (incidentStart) {
-        const duration = Date.now() - incidentStart.getTime();
-        if (duration >= CRITICAL_THRESHOLD_MS) {
-          criticalIncidents++;
-        } else {
-          warningIncidents++;
+      // Classify each incident
+      for (const downMonitor of currentlyDownMonitors) {
+        const recentResults = resultsByMonitor.get(downMonitor.monitorId) || [];
+
+        // Find when the current downtime started (walk back until we find an 'up')
+        let incidentStart: Date | null = null;
+        for (const result of recentResults) {
+          if (result.isUp) {
+            break;
+          }
+          incidentStart = result.createdAt;
         }
-      } else {
-        // Been down for entire period, count as critical
-        criticalIncidents++;
+
+        if (incidentStart) {
+          const duration = Date.now() - incidentStart.getTime();
+          if (duration >= CRITICAL_THRESHOLD_MS) {
+            criticalIncidents++;
+          } else {
+            warningIncidents++;
+          }
+        } else {
+          // Been down for entire period, count as critical
+          criticalIncidents++;
+        }
       }
     }
 
@@ -166,18 +179,17 @@ export class DashboardService {
     const monitorMap = new Map(monitors.map((m) => [m.id, m.name]));
 
     // Get check results from the last 24 hours, ordered by monitor and time
+    // OPTIMIZATION: Only select needed columns (skip responseHeaders JSONB)
     const last24Hours = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
-    const checkResults = await this.checkResultRepository.find({
-      where: {
-        monitorId: In(monitorIds),
-        createdAt: MoreThanOrEqual(last24Hours),
-      },
-      order: {
-        monitorId: 'ASC',
-        createdAt: 'ASC',
-      },
-    });
+    const checkResults = await this.checkResultRepository
+      .createQueryBuilder('cr')
+      .select(['cr.id', 'cr.monitorId', 'cr.isUp', 'cr.createdAt', 'cr.errorMessage'])
+      .where('cr.monitorId IN (:...monitorIds)', { monitorIds })
+      .andWhere('cr.createdAt >= :last24Hours', { last24Hours })
+      .orderBy('cr.monitorId', 'ASC')
+      .addOrderBy('cr.createdAt', 'ASC')
+      .getMany();
 
     // Group results by monitor
     const resultsByMonitor = new Map<string, typeof checkResults>();
