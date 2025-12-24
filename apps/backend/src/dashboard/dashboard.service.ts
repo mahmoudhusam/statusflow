@@ -14,7 +14,7 @@ import {
   PerformanceTrendDto,
   MonitorStatusDto,
   MonitorStatusType,
-} from './dto';
+} from '@/dashboard/dto';
 
 @Injectable()
 export class DashboardService {

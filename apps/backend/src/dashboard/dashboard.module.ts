@@ -3,8 +3,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Monitor } from '@/monitor/monitor.entity';
 import { CheckResult } from '@/check-result/check-result.entity';
 import { AlertHistory } from '@/alert/entities/alert-history.entity';
-import { DashboardService } from './dashboard.service';
-import { DashboardController } from './dashboard.controller';
+import { DashboardService } from '@/dashboard/dashboard.service';
+import { DashboardController } from '@/dashboard/dashboard.controller';
 
 @Module({
   imports: [TypeOrmModule.forFeature([Monitor, CheckResult, AlertHistory])],
