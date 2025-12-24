@@ -12,6 +12,7 @@ import { AlertService } from '@/alert/alert.service';
 import { AlertModule } from '@/alert/alert.module';
 import { QueueModule } from '@/queue/queue.module';
 import { ReportsModule } from '@/reports/reports.module';
+import { DashboardModule } from '@/dashboard/dashboard.module';
 
 @Module({
   imports: [
@@ -49,6 +50,7 @@ import { ReportsModule } from '@/reports/reports.module';
     AlertModule,
     QueueModule,
     ReportsModule,
+    DashboardModule,
   ],
   controllers: [AppController],
   providers: [AppService],
