@@ -1,44 +1,13 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { MonitorCard } from '@/components/monitors/MonitorCard';
 import { SkeletonLoader } from '@/components/ui/SkeletonLoader';
 import { ErrorDisplay } from '@/components/ui/ErrorDisplay';
-import { useAuth } from '@/contexts/AuthContext';
-import { monitorsApi } from '@/lib/api/monitors';
-import type { Monitor } from '@/types/monitor';
+import { useMonitors } from '@/hooks/useMonitors';
 
 export default function MonitorsPage() {
-  const { token } = useAuth();
-  const [monitors, setMonitors] = useState<Monitor[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
-
-  const fetchMonitors = useCallback(async () => {
-    if (!token) return;
-
-    try {
-      setLoading(true);
-      setError(null);
-      const data = await monitorsApi.getMonitors(token);
-      setMonitors(data);
-    } catch (err) {
-      setError(
-        err instanceof Error ? err : new Error('Failed to fetch monitors')
-      );
-    } finally {
-      setLoading(false);
-    }
-  }, [token]);
-
-  useEffect(() => {
-    fetchMonitors();
-  }, [fetchMonitors]);
-
-  const handleRefresh = () => {
-    fetchMonitors();
-  };
+  const { data: monitors, isLoading, error, refetch, isFetching } = useMonitors();
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -47,26 +16,30 @@ export default function MonitorsPage() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 mb-2">Monitors</h1>
-            {!loading && !error && monitors && (
+            {!isLoading && !error && monitors && (
               <p className="text-gray-600 flex items-center gap-2">
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-sm font-medium">
                   <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
                   {monitors.length} active monitor
                   {monitors.length !== 1 ? 's' : ''}
                 </span>
+                {isFetching && !isLoading && (
+                  <span className="text-xs text-gray-400">Refreshing...</span>
+                )}
               </p>
             )}
           </div>
 
           <div className="flex items-center gap-3">
-            {!loading && !error && (
+            {!isLoading && !error && (
               <button
-                onClick={handleRefresh}
-                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 hover:border-gray-300 transition-all text-gray-700 font-medium shadow-sm"
+                onClick={() => refetch()}
+                disabled={isFetching}
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 hover:border-gray-300 transition-all text-gray-700 font-medium shadow-sm disabled:opacity-50"
                 title="Refresh monitors"
               >
                 <svg
-                  className="w-4 h-4"
+                  className={`w-4 h-4 ${isFetching ? 'animate-spin' : ''}`}
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -105,24 +78,24 @@ export default function MonitorsPage() {
       </div>
 
       {/* Loading State */}
-      {loading && (
+      {isLoading && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <SkeletonLoader variant="card" count={6} />
         </div>
       )}
 
       {/* Error State */}
-      {error && !loading && (
+      {error && !isLoading && (
         <ErrorDisplay
           title="Failed to load monitors"
           message="We couldn't fetch your monitors. Please check your connection and try again."
-          error={error}
-          onRetry={fetchMonitors}
+          error={error instanceof Error ? error : new Error('Failed to fetch monitors')}
+          onRetry={() => refetch()}
         />
       )}
 
       {/* Monitors Grid */}
-      {!loading && !error && monitors && token && (
+      {!isLoading && !error && monitors && (
         <>
           {monitors.length === 0 ? (
             <div className="text-center py-16">
@@ -173,7 +146,7 @@ export default function MonitorsPage() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {monitors.map((monitor) => (
-                <MonitorCard key={monitor.id} monitor={monitor} token={token} />
+                <MonitorCard key={monitor.id} monitor={monitor} />
               ))}
             </div>
           )}
@@ -181,7 +154,7 @@ export default function MonitorsPage() {
       )}
 
       {/* Loading indicator */}
-      {loading && (
+      {isLoading && (
         <div className="fixed bottom-6 right-6 bg-white rounded-lg shadow-xl border border-gray-200 px-5 py-3 flex items-center gap-3">
           <div className="animate-spin rounded-full h-5 w-5 border-2 border-blue-500 border-t-transparent" />
           <span className="text-sm font-medium text-gray-700">

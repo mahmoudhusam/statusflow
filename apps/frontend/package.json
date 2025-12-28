@@ -10,6 +10,7 @@
     "check‑types": "tsc --noEmit --build tsconfig.json"
   },
   "dependencies": {
+    "@tanstack/react-query": "^5.90.12",
     "chart.js": "^4.5.1",
     "date-fns": "^4.1.0",
     "lucide-react": "^0.554.0",
