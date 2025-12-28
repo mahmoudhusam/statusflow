@@ -3,24 +3,15 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { formatDistanceToNow } from 'date-fns/formatDistanceToNow';
-import type { DashboardIncident, IncidentStatus } from '@/types/dashboard';
+import { useDashboardIncidents } from '@/hooks/useDashboard';
+import type { IncidentStatus } from '@/types/dashboard';
 
-interface IncidentsListProps {
-  incidents: DashboardIncident[];
-  onSort?: (sort: 'latest' | 'oldest') => void;
-  currentSort?: 'latest' | 'oldest';
-}
-
-export function IncidentsList({
-  incidents,
-  onSort,
-  currentSort = 'latest',
-}: IncidentsListProps) {
-  const [sortBy, setSortBy] = useState<'latest' | 'oldest'>(currentSort);
+export function IncidentsList() {
+  const [sortBy, setSortBy] = useState<'latest' | 'oldest'>('latest');
+  const { data: incidents = [], isLoading } = useDashboardIncidents(sortBy);
 
   const handleSort = (newSort: 'latest' | 'oldest') => {
     setSortBy(newSort);
-    onSort?.(newSort);
   };
 
   const getStatusBadge = (status: IncidentStatus) => {
@@ -56,6 +47,27 @@ export function IncidentsList({
     if (minutes > 0) return `${minutes}m`;
     return `${seconds}s`;
   };
+
+  if (isLoading) {
+    return (
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">
+          Recent Incidents
+        </h2>
+        <div className="space-y-3">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="animate-pulse flex items-center space-x-4">
+              <div className="h-4 bg-gray-200 rounded w-32" />
+              <div className="h-6 bg-gray-200 rounded-full w-16" />
+              <div className="h-4 bg-gray-200 rounded w-16" />
+              <div className="h-4 bg-gray-200 rounded w-20" />
+              <div className="h-4 bg-gray-200 rounded flex-1" />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   if (incidents.length === 0) {
     return (

@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { SkeletonLoader } from '@/components/ui/SkeletonLoader';
 import { ErrorDisplay } from '@/components/ui/ErrorDisplay';
@@ -14,7 +13,6 @@ import { MonitorStatusGrid } from './components/MonitorStatusGrid';
 import { CheckStatusChart } from './components/CheckStatusChart';
 import {
   useDashboardStats,
-  useDashboardIncidents,
   useDashboardNotifications,
   usePerformanceTrends,
   useMonitorStatuses,
@@ -24,31 +22,23 @@ import type { DashboardStats } from '@/types/dashboard';
 
 export function DashboardClient() {
   const queryClient = useQueryClient();
-  const [incidentSort, setIncidentSort] = useState<'latest' | 'oldest'>('latest');
 
   const statsQuery = useDashboardStats();
-  const incidentsQuery = useDashboardIncidents(incidentSort);
   const notificationsQuery = useDashboardNotifications();
   const trendsQuery = usePerformanceTrends(24);
   const monitorStatusesQuery = useMonitorStatuses();
 
   const isLoading =
     statsQuery.isLoading ||
-    incidentsQuery.isLoading ||
     notificationsQuery.isLoading ||
     trendsQuery.isLoading ||
     monitorStatusesQuery.isLoading;
 
   const error =
     statsQuery.error ||
-    incidentsQuery.error ||
     notificationsQuery.error ||
     trendsQuery.error ||
     monitorStatusesQuery.error;
-
-  const handleIncidentSort = async (sort: 'latest' | 'oldest') => {
-    setIncidentSort(sort);
-  };
 
   const handleRetry = () => {
     queryClient.invalidateQueries({ queryKey: dashboardKeys.all });
@@ -119,7 +109,6 @@ export function DashboardClient() {
   }
 
   const stats = statsQuery.data;
-  const incidents = incidentsQuery.data ?? [];
   const notifications = notificationsQuery.data;
   const trends = trendsQuery.data ?? [];
   const monitorStatuses = monitorStatusesQuery.data ?? [];
@@ -257,11 +246,7 @@ export function DashboardClient() {
 
       {/* Row 6: Recent Incidents - full width */}
       <div>
-        <IncidentsList
-          incidents={incidents}
-          onSort={handleIncidentSort}
-          currentSort={incidentSort}
-        />
+        <IncidentsList />
       </div>
     </div>
   );
