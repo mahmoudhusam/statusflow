@@ -1,8 +1,7 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
-import { dashboardApi } from '@/lib/api/dashboard';
+import { useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { SkeletonLoader } from '@/components/ui/SkeletonLoader';
 import { ErrorDisplay } from '@/components/ui/ErrorDisplay';
 import { StatsCard } from './components/StatsCard';
@@ -13,73 +12,46 @@ import { PerformanceTrends } from './components/PerformanceTrends';
 import { ResponseTimeTrends } from './components/ResponseTimeTrends';
 import { MonitorStatusGrid } from './components/MonitorStatusGrid';
 import { CheckStatusChart } from './components/CheckStatusChart';
-import type {
-  DashboardStats,
-  DashboardIncident,
-  DashboardNotifications,
-  PerformanceTrend,
-  MonitorStatus,
-} from '@/types/dashboard';
-
-interface DashboardData {
-  stats: DashboardStats | null;
-  incidents: DashboardIncident[];
-  notifications: DashboardNotifications | null;
-  trends: PerformanceTrend[];
-  monitorStatuses: MonitorStatus[];
-}
+import {
+  useDashboardStats,
+  useDashboardIncidents,
+  useDashboardNotifications,
+  usePerformanceTrends,
+  useMonitorStatuses,
+} from '@/hooks/useDashboard';
+import { dashboardKeys } from '@/hooks/useMonitors';
+import type { DashboardStats } from '@/types/dashboard';
 
 export function DashboardClient() {
-  const { token } = useAuth();
-  const [data, setData] = useState<DashboardData>({
-    stats: null,
-    incidents: [],
-    notifications: null,
-    trends: [],
-    monitorStatuses: [],
-  });
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
+  const queryClient = useQueryClient();
   const [incidentSort, setIncidentSort] = useState<'latest' | 'oldest'>('latest');
 
-  const fetchDashboardData = useCallback(async () => {
-    if (!token) return;
+  const statsQuery = useDashboardStats();
+  const incidentsQuery = useDashboardIncidents(incidentSort);
+  const notificationsQuery = useDashboardNotifications();
+  const trendsQuery = usePerformanceTrends(24);
+  const monitorStatusesQuery = useMonitorStatuses();
 
-    try {
-      setLoading(true);
-      setError(null);
+  const isLoading =
+    statsQuery.isLoading ||
+    incidentsQuery.isLoading ||
+    notificationsQuery.isLoading ||
+    trendsQuery.isLoading ||
+    monitorStatusesQuery.isLoading;
 
-      const [stats, incidents, notifications, trends, monitorStatuses] = await Promise.all([
-        dashboardApi.getStats(token),
-        dashboardApi.getIncidents(token, { limit: 10, sort: incidentSort }),
-        dashboardApi.getNotifications(token),
-        dashboardApi.getPerformanceTrends(token, 24),
-        dashboardApi.getMonitorStatuses(token),
-      ]);
-
-      setData({ stats, incidents, notifications, trends, monitorStatuses });
-    } catch (err) {
-      setError(
-        err instanceof Error ? err : new Error('Failed to load dashboard data')
-      );
-    } finally {
-      setLoading(false);
-    }
-  }, [token, incidentSort]);
-
-  useEffect(() => {
-    fetchDashboardData();
-  }, [fetchDashboardData]);
+  const error =
+    statsQuery.error ||
+    incidentsQuery.error ||
+    notificationsQuery.error ||
+    trendsQuery.error ||
+    monitorStatusesQuery.error;
 
   const handleIncidentSort = async (sort: 'latest' | 'oldest') => {
-    if (!token) return;
     setIncidentSort(sort);
-    try {
-      const incidents = await dashboardApi.getIncidents(token, { limit: 10, sort });
-      setData((prev) => ({ ...prev, incidents }));
-    } catch (err) {
-      console.error('Failed to sort incidents:', err);
-    }
+  };
+
+  const handleRetry = () => {
+    queryClient.invalidateQueries({ queryKey: dashboardKeys.all });
   };
 
   const formatMonitorCount = (stats: DashboardStats) => {
@@ -104,7 +76,7 @@ export function DashboardClient() {
     return parts.join(', ') || 'None';
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="container mx-auto px-4 py-6">
         {/* Header skeleton */}
@@ -139,14 +111,18 @@ export function DashboardClient() {
         <ErrorDisplay
           title="Failed to load dashboard"
           message="We couldn't fetch your dashboard data. Please check your connection and try again."
-          error={error}
-          onRetry={fetchDashboardData}
+          error={error instanceof Error ? error : new Error('Failed to load dashboard')}
+          onRetry={handleRetry}
         />
       </div>
     );
   }
 
-  const { stats, incidents, notifications, trends, monitorStatuses } = data;
+  const stats = statsQuery.data;
+  const incidents = incidentsQuery.data ?? [];
+  const notifications = notificationsQuery.data;
+  const trends = trendsQuery.data ?? [];
+  const monitorStatuses = monitorStatusesQuery.data ?? [];
 
   return (
     <div className="container mx-auto px-4 py-6">

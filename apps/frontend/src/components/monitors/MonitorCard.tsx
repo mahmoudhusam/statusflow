@@ -6,11 +6,9 @@ import { CheckCircle, AlertCircle, PauseCircle, Activity } from 'lucide-react';
 
 interface MonitorCardProps {
   monitor: Monitor;
-  token: string;
-  onUpdate?: () => void;
 }
 
-export function MonitorCard({ monitor, token, onUpdate }: MonitorCardProps) {
+export function MonitorCard({ monitor }: MonitorCardProps) {
   const latestStatus = monitor.latestStatus;
   const isUp = latestStatus?.isUp ?? false;
   const hasData = !!latestStatus;
@@ -120,11 +118,7 @@ export function MonitorCard({ monitor, token, onUpdate }: MonitorCardProps) {
 
           {/* Monitor Actions */}
           <div onClick={(e) => e.preventDefault()} className="relative z-10">
-            <MonitorActions
-              monitor={monitor}
-              token={token}
-              onUpdate={onUpdate}
-            />
+            <MonitorActions monitor={monitor} />
           </div>
         </div>
       </div>

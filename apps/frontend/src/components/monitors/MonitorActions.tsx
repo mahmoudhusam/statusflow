@@ -3,25 +3,21 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Trash2, Pause, Play, MoreVertical } from 'lucide-react';
-import { monitorsApi } from '@/lib/api/monitors';
+import { usePauseMonitor, useResumeMonitor, useDeleteMonitor } from '@/hooks/useMonitors';
 import type { Monitor } from '@/types/monitor';
 
 interface MonitorActionsProps {
   monitor: Monitor;
-  token: string;
-  onUpdate?: () => void;
+  onDeleted?: () => void;
 }
 
-export function MonitorActions({
-  monitor,
-  token,
-  onUpdate,
-}: MonitorActionsProps) {
+export function MonitorActions({ monitor, onDeleted }: MonitorActionsProps) {
   const router = useRouter();
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [isPausing, setIsPausing] = useState(false);
-  const [isResuming, setIsResuming] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
+
+  const pauseMutation = usePauseMonitor();
+  const resumeMutation = useResumeMonitor();
+  const deleteMutation = useDeleteMonitor();
 
   const handleDelete = async () => {
     if (
@@ -32,58 +28,44 @@ export function MonitorActions({
       return;
     }
 
-    setIsDeleting(true);
-    try {
-      await monitorsApi.deleteMonitor(monitor.id, token);
-      if (onUpdate) {
-        onUpdate();
-      } else {
-        router.push('/dashboard/monitors');
-        router.refresh();
-      }
-    } catch (error) {
-      console.error('Failed to delete monitor:', error);
-      alert('Failed to delete monitor. Please try again.');
-    } finally {
-      setIsDeleting(false);
-      setShowMenu(false);
-    }
+    deleteMutation.mutate(monitor.id, {
+      onSuccess: () => {
+        setShowMenu(false);
+        if (onDeleted) {
+          onDeleted();
+        } else {
+          router.push('/dashboard/monitors');
+        }
+      },
+      onError: (error) => {
+        console.error('Failed to delete monitor:', error);
+        alert('Failed to delete monitor. Please try again.');
+      },
+    });
   };
 
   const handlePause = async () => {
-    setIsPausing(true);
-    try {
-      await monitorsApi.pauseMonitor(monitor.id, token);
-      if (onUpdate) {
-        onUpdate();
-      } else {
-        router.refresh();
-      }
-    } catch (error) {
-      console.error('Failed to pause monitor:', error);
-      alert('Failed to pause monitor. Please try again.');
-    } finally {
-      setIsPausing(false);
-      setShowMenu(false);
-    }
+    pauseMutation.mutate(monitor.id, {
+      onSuccess: () => {
+        setShowMenu(false);
+      },
+      onError: (error) => {
+        console.error('Failed to pause monitor:', error);
+        alert('Failed to pause monitor. Please try again.');
+      },
+    });
   };
 
   const handleResume = async () => {
-    setIsResuming(true);
-    try {
-      await monitorsApi.resumeMonitor(monitor.id, token);
-      if (onUpdate) {
-        onUpdate();
-      } else {
-        router.refresh();
-      }
-    } catch (error) {
-      console.error('Failed to resume monitor:', error);
-      alert('Failed to resume monitor. Please try again.');
-    } finally {
-      setIsResuming(false);
-      setShowMenu(false);
-    }
+    resumeMutation.mutate(monitor.id, {
+      onSuccess: () => {
+        setShowMenu(false);
+      },
+      onError: (error) => {
+        console.error('Failed to resume monitor:', error);
+        alert('Failed to resume monitor. Please try again.');
+      },
+    });
   };
 
   const isActive = !monitor.paused;
@@ -110,32 +92,32 @@ export function MonitorActions({
               {isActive && (
                 <button
                   onClick={handlePause}
-                  disabled={isPausing}
+                  disabled={pauseMutation.isPending}
                   className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
                 >
                   <Pause className="w-4 h-4" />
-                  {isPausing ? 'Pausing...' : 'Pause Monitor'}
+                  {pauseMutation.isPending ? 'Pausing...' : 'Pause Monitor'}
                 </button>
               )}
 
               {isPaused && (
                 <button
                   onClick={handleResume}
-                  disabled={isResuming}
+                  disabled={resumeMutation.isPending}
                   className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
                 >
                   <Play className="w-4 h-4" />
-                  {isResuming ? 'Resuming...' : 'Resume Monitor'}
+                  {resumeMutation.isPending ? 'Resuming...' : 'Resume Monitor'}
                 </button>
               )}
 
               <button
                 onClick={handleDelete}
-                disabled={isDeleting}
+                disabled={deleteMutation.isPending}
                 className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
               >
                 <Trash2 className="w-4 h-4" />
-                {isDeleting ? 'Deleting...' : 'Delete Monitor'}
+                {deleteMutation.isPending ? 'Deleting...' : 'Delete Monitor'}
               </button>
             </div>
           </div>
