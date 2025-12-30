@@ -1,14 +1,13 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { AuthModule } from '@/auth/auth.module';
+import { ScheduleModule } from '@nestjs/schedule';
 import { AppController } from '@/app.controller';
 import { AppService } from '@/app.service';
-import { MonitorModule } from '@/monitor/monitor.module';
+import { AuthModule } from '@/auth/auth.module';
 import { UserModule } from '@/user/user.module';
+import { MonitorModule } from '@/monitor/monitor.module';
 import { CheckResultModule } from '@/check-result/check-result.module';
-import { ScheduleModule } from '@nestjs/schedule';
-import { AlertService } from '@/alert/alert.service';
 import { AlertModule } from '@/alert/alert.module';
 import { QueueModule } from '@/queue/queue.module';
 import { ReportsModule } from '@/reports/reports.module';
@@ -39,9 +38,6 @@ import { DashboardModule } from '@/dashboard/dashboard.module';
         ssl: {
           rejectUnauthorized: false,
         },
-        // logging: ['query', 'error'], // Enable query and error logging
-
-        // Connection pool settings for Supabase pooler (port 6543)
         extra: {
           max: 10,
           min: 2,

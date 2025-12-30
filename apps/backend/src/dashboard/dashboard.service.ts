@@ -28,59 +28,40 @@ export class DashboardService {
   ) {}
 
   async getStats(userId: string): Promise<DashboardStatsDto> {
-    // Get user's monitors
-    const monitors = await this.monitorRepository.find({
-      where: { user: { id: userId } },
-      select: ['id', 'paused'],
-    });
-
-    const totalMonitors = monitors.length;
-    const activeMonitors = monitors.filter((m) => !m.paused).length;
-    const pausedMonitors = monitors.filter((m) => m.paused).length;
-
-    // If no monitors, return early with zeros
-    if (totalMonitors === 0) {
-      return {
-        totalMonitors: 0,
-        activeMonitors: 0,
-        pausedMonitors: 0,
-        overallUptime: null,
-        avgResponseTime: null,
-        activeIncidents: 0,
-        criticalIncidents: 0,
-        warningIncidents: 0,
-        successfulChecks: 0,
-        failedChecks: 0,
-      };
-    }
-
-    const monitorIds = monitors.map((m) => m.id);
     const last24Hours = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
-    // Run both queries in PARALLEL to reduce cold start impact
-    const [checkStats, incidentStats] = await Promise.all([
-      // Query 1: Get uptime, response time, and check counts
-      this.checkResultRepository
-        .createQueryBuilder('cr')
-        .select('AVG(CASE WHEN cr.isUp THEN 100 ELSE 0 END)', 'uptime')
-        .addSelect('AVG(cr.responseTime)', 'avgResponseTime')
-        .addSelect('SUM(CASE WHEN cr.isUp THEN 1 ELSE 0 END)', 'successfulChecks')
-        .addSelect('SUM(CASE WHEN cr.isUp THEN 0 ELSE 1 END)', 'failedChecks')
-        .where('cr.monitorId IN (:...monitorIds)', { monitorIds })
-        .andWhere('cr.createdAt >= :last24Hours', { last24Hours })
-        .getRawOne(),
+    // Run monitors query and stats queries in parallel
+    const [monitors, statsResult] = await Promise.all([
+      // Query 1: Get user's monitors
+      this.monitorRepository.find({
+        where: { user: { id: userId } },
+        select: ['id', 'paused'],
+      }),
 
-      // Query 2: Get incident counts using a single optimized SQL query
+      // Query 2: Get all stats in a single optimized query
       this.checkResultRepository.query(
         `
-        WITH latest_status AS (
-          SELECT DISTINCT ON ("monitorId")
-            "monitorId",
-            "isUp",
-            "createdAt"
-          FROM check_result
-          WHERE "monitorId" = ANY($1)
-          ORDER BY "monitorId", "createdAt" DESC
+        WITH user_monitors AS (
+          SELECT id FROM monitor WHERE "userId" = $1
+        ),
+        check_stats AS (
+          SELECT
+            AVG(CASE WHEN cr."isUp" THEN 100 ELSE 0 END) as uptime,
+            AVG(cr."responseTime") as avg_response_time,
+            SUM(CASE WHEN cr."isUp" THEN 1 ELSE 0 END) as successful_checks,
+            SUM(CASE WHEN cr."isUp" THEN 0 ELSE 1 END) as failed_checks
+          FROM check_result cr
+          WHERE cr."monitorId" IN (SELECT id FROM user_monitors)
+            AND cr."createdAt" >= $2
+        ),
+        latest_status AS (
+          SELECT DISTINCT ON (cr."monitorId")
+            cr."monitorId",
+            cr."isUp",
+            cr."createdAt"
+          FROM check_result cr
+          WHERE cr."monitorId" IN (SELECT id FROM user_monitors)
+          ORDER BY cr."monitorId", cr."createdAt" DESC
         ),
         down_monitors AS (
           SELECT "monitorId", "createdAt" as latest_down_at
@@ -103,37 +84,55 @@ export class DashboardService {
                 AND cr2."isUp" = true
             )
           GROUP BY dm."monitorId"
+        ),
+        incident_counts AS (
+          SELECT
+            COUNT(*) as active_incidents,
+            SUM(CASE WHEN EXTRACT(EPOCH FROM (NOW() - started_at)) * 1000 >= 300000 THEN 1 ELSE 0 END) as critical_incidents,
+            SUM(CASE WHEN EXTRACT(EPOCH FROM (NOW() - started_at)) * 1000 < 300000 THEN 1 ELSE 0 END) as warning_incidents
+          FROM incident_start
         )
         SELECT
-          COUNT(*) as active_incidents,
-          SUM(CASE WHEN EXTRACT(EPOCH FROM (NOW() - started_at)) * 1000 >= 300000 THEN 1 ELSE 0 END) as critical_incidents,
-          SUM(CASE WHEN EXTRACT(EPOCH FROM (NOW() - started_at)) * 1000 < 300000 THEN 1 ELSE 0 END) as warning_incidents
-        FROM incident_start
+          cs.uptime,
+          cs.avg_response_time,
+          cs.successful_checks,
+          cs.failed_checks,
+          COALESCE(ic.active_incidents, 0) as active_incidents,
+          COALESCE(ic.critical_incidents, 0) as critical_incidents,
+          COALESCE(ic.warning_incidents, 0) as warning_incidents
+        FROM check_stats cs
+        CROSS JOIN incident_counts ic
         `,
-        [monitorIds, last24Hours],
+        [userId, last24Hours],
       ),
     ]);
 
-    const overallUptime = checkStats?.uptime
-      ? parseFloat(parseFloat(checkStats.uptime).toFixed(2))
-      : null;
-    const avgResponseTime = checkStats?.avgResponseTime
-      ? Math.round(parseFloat(checkStats.avgResponseTime))
-      : null;
-    const successfulChecks = checkStats?.successfulChecks
-      ? parseInt(checkStats.successfulChecks, 10)
-      : 0;
-    const failedChecks = checkStats?.failedChecks
-      ? parseInt(checkStats.failedChecks, 10)
-      : 0;
+    const totalMonitors = monitors.length;
+    const activeMonitors = monitors.filter((m) => !m.paused).length;
+    const pausedMonitors = monitors.filter((m) => m.paused).length;
 
-    const incidentRow = incidentStats?.[0] || {};
-    const activeIncidents = parseInt(incidentRow.active_incidents || '0', 10);
-    const criticalIncidents = parseInt(
-      incidentRow.critical_incidents || '0',
-      10,
-    );
-    const warningIncidents = parseInt(incidentRow.warning_incidents || '0', 10);
+    if (totalMonitors === 0) {
+      return {
+        totalMonitors: 0,
+        activeMonitors: 0,
+        pausedMonitors: 0,
+        overallUptime: null,
+        avgResponseTime: null,
+        activeIncidents: 0,
+        criticalIncidents: 0,
+        warningIncidents: 0,
+        successfulChecks: 0,
+        failedChecks: 0,
+      };
+    }
+
+    const stats = statsResult?.[0] || {};
+    const overallUptime = stats.uptime
+      ? parseFloat(parseFloat(stats.uptime).toFixed(2))
+      : null;
+    const avgResponseTime = stats.avg_response_time
+      ? Math.round(parseFloat(stats.avg_response_time))
+      : null;
 
     return {
       totalMonitors,
@@ -141,11 +140,11 @@ export class DashboardService {
       pausedMonitors,
       overallUptime,
       avgResponseTime,
-      activeIncidents,
-      criticalIncidents,
-      warningIncidents,
-      successfulChecks,
-      failedChecks,
+      activeIncidents: parseInt(stats.active_incidents || '0', 10),
+      criticalIncidents: parseInt(stats.critical_incidents || '0', 10),
+      warningIncidents: parseInt(stats.warning_incidents || '0', 10),
+      successfulChecks: parseInt(stats.successful_checks || '0', 10),
+      failedChecks: parseInt(stats.failed_checks || '0', 10),
     };
   }
 

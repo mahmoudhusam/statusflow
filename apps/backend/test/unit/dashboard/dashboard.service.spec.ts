@@ -100,18 +100,17 @@ describe('DashboardService', () => {
     it('should return dashboard stats with monitors', async () => {
       monitorRepository.find.mockResolvedValue(mockMonitors);
 
-      const mockQb = checkResultRepository.createQueryBuilder();
-      // Query for uptime/avgResponseTime/check counts
-      mockQb.getRawOne.mockResolvedValue({
-        uptime: '99.5',
-        avgResponseTime: '245.5',
-        successfulChecks: '995',
-        failedChecks: '5',
-      });
-
-      // Raw SQL query for incident counts (all monitors are up, no incidents)
+      // Combined raw SQL query for all stats
       checkResultRepository.query.mockResolvedValue([
-        { active_incidents: '0', critical_incidents: '0', warning_incidents: '0' },
+        {
+          uptime: '99.5',
+          avg_response_time: '245.5',
+          successful_checks: '995',
+          failed_checks: '5',
+          active_incidents: '0',
+          critical_incidents: '0',
+          warning_incidents: '0',
+        },
       ]);
 
       const result = await service.getStats(mockUserId);
@@ -131,17 +130,17 @@ describe('DashboardService', () => {
     it('should count active incidents from currently down monitors', async () => {
       monitorRepository.find.mockResolvedValue(mockMonitors);
 
-      const mockQb = checkResultRepository.createQueryBuilder();
-      mockQb.getRawOne.mockResolvedValue({
-        uptime: '95.0',
-        avgResponseTime: '300',
-        successfulChecks: '950',
-        failedChecks: '50',
-      });
-
-      // Raw SQL query returns 1 warning incident (down < 5 min)
+      // Combined raw SQL query with 1 warning incident
       checkResultRepository.query.mockResolvedValue([
-        { active_incidents: '1', critical_incidents: '0', warning_incidents: '1' },
+        {
+          uptime: '95.0',
+          avg_response_time: '300',
+          successful_checks: '950',
+          failed_checks: '50',
+          active_incidents: '1',
+          critical_incidents: '0',
+          warning_incidents: '1',
+        },
       ]);
 
       const result = await service.getStats(mockUserId);
@@ -154,17 +153,17 @@ describe('DashboardService', () => {
     it('should count critical incidents for monitors down > 5 minutes', async () => {
       monitorRepository.find.mockResolvedValue(mockMonitors);
 
-      const mockQb = checkResultRepository.createQueryBuilder();
-      mockQb.getRawOne.mockResolvedValue({
-        uptime: '90.0',
-        avgResponseTime: '500',
-        successfulChecks: '900',
-        failedChecks: '100',
-      });
-
-      // Raw SQL query returns 1 critical incident (down > 5 min)
+      // Combined raw SQL query with 1 critical incident
       checkResultRepository.query.mockResolvedValue([
-        { active_incidents: '1', critical_incidents: '1', warning_incidents: '0' },
+        {
+          uptime: '90.0',
+          avg_response_time: '500',
+          successful_checks: '900',
+          failed_checks: '100',
+          active_incidents: '1',
+          critical_incidents: '1',
+          warning_incidents: '0',
+        },
       ]);
 
       const result = await service.getStats(mockUserId);
@@ -192,15 +191,17 @@ describe('DashboardService', () => {
     it('should handle null uptime/response time from DB', async () => {
       monitorRepository.find.mockResolvedValue(mockMonitors);
 
-      const mockQb = checkResultRepository.createQueryBuilder();
-      mockQb.getRawOne.mockResolvedValue({
-        uptime: null,
-        avgResponseTime: null,
-      });
-
-      // Raw SQL query for incident counts
+      // Combined raw SQL query with null uptime/response time
       checkResultRepository.query.mockResolvedValue([
-        { active_incidents: '0', critical_incidents: '0', warning_incidents: '0' },
+        {
+          uptime: null,
+          avg_response_time: null,
+          successful_checks: '0',
+          failed_checks: '0',
+          active_incidents: '0',
+          critical_incidents: '0',
+          warning_incidents: '0',
+        },
       ]);
 
       const result = await service.getStats(mockUserId);
