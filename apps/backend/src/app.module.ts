@@ -41,13 +41,13 @@ import { DashboardModule } from '@/dashboard/dashboard.module';
         },
         // logging: ['query', 'error'], // Enable query and error logging
 
-        // Connection pool settings (uncomment if needed for extra protection)
-        // Useful when running multiple instances or as defense-in-depth
-        // extra: {
-        //   max: 10,                 // Max connections in pool
-        //   min: 2,                  // Min connections to keep warm
-        //   idleTimeoutMillis: 30000, // Close idle connections after 30s
-        // },
+        // Connection pool settings for Supabase pooler (port 6543)
+        extra: {
+          max: 10,
+          min: 2,
+          idleTimeoutMillis: 30000,
+          connectionTimeoutMillis: 5000,
+        },
       }),
     }),
 
