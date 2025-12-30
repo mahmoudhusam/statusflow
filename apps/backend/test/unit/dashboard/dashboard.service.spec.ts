@@ -101,18 +101,17 @@ describe('DashboardService', () => {
       monitorRepository.find.mockResolvedValue(mockMonitors);
 
       const mockQb = checkResultRepository.createQueryBuilder();
-      // First call for uptime/avgResponseTime/check counts
+      // Query for uptime/avgResponseTime/check counts
       mockQb.getRawOne.mockResolvedValue({
         uptime: '99.5',
         avgResponseTime: '245.5',
         successfulChecks: '995',
         failedChecks: '5',
       });
-      // Second call for latest checks (all monitors are up)
-      mockQb.getRawMany.mockResolvedValue([
-        { monitorId: 'monitor-1', isUp: true },
-        { monitorId: 'monitor-2', isUp: true },
-        { monitorId: 'monitor-3', isUp: true },
+
+      // Raw SQL query for incident counts (all monitors are up, no incidents)
+      checkResultRepository.query.mockResolvedValue([
+        { active_incidents: '0', critical_incidents: '0', warning_incidents: '0' },
       ]);
 
       const result = await service.getStats(mockUserId);
@@ -139,20 +138,10 @@ describe('DashboardService', () => {
         successfulChecks: '950',
         failedChecks: '50',
       });
-      // One monitor is currently down
-      mockQb.getRawMany.mockResolvedValue([
-        { monitorId: 'monitor-1', isUp: false },
-        { monitorId: 'monitor-2', isUp: true },
-        { monitorId: 'monitor-3', isUp: true },
-      ]);
 
-      // Mock the find call for incident duration check
-      const now = new Date();
-      checkResultRepository.find.mockResolvedValue([
-        // Recent failures (walking back in time)
-        { monitorId: 'monitor-1', isUp: false, createdAt: new Date(now.getTime() - 60000) },
-        { monitorId: 'monitor-1', isUp: false, createdAt: new Date(now.getTime() - 120000) },
-        { monitorId: 'monitor-1', isUp: true, createdAt: new Date(now.getTime() - 180000) },
+      // Raw SQL query returns 1 warning incident (down < 5 min)
+      checkResultRepository.query.mockResolvedValue([
+        { active_incidents: '1', critical_incidents: '0', warning_incidents: '1' },
       ]);
 
       const result = await service.getStats(mockUserId);
@@ -172,16 +161,10 @@ describe('DashboardService', () => {
         successfulChecks: '900',
         failedChecks: '100',
       });
-      mockQb.getRawMany.mockResolvedValue([
-        { monitorId: 'monitor-1', isUp: false },
-      ]);
 
-      const now = new Date();
-      // Down for more than 5 minutes
-      checkResultRepository.find.mockResolvedValue([
-        { monitorId: 'monitor-1', isUp: false, createdAt: new Date(now.getTime() - 60000) },
-        { monitorId: 'monitor-1', isUp: false, createdAt: new Date(now.getTime() - 360000) }, // 6 min ago
-        { monitorId: 'monitor-1', isUp: true, createdAt: new Date(now.getTime() - 420000) },
+      // Raw SQL query returns 1 critical incident (down > 5 min)
+      checkResultRepository.query.mockResolvedValue([
+        { active_incidents: '1', critical_incidents: '1', warning_incidents: '0' },
       ]);
 
       const result = await service.getStats(mockUserId);
@@ -214,7 +197,11 @@ describe('DashboardService', () => {
         uptime: null,
         avgResponseTime: null,
       });
-      mockQb.getRawMany.mockResolvedValue([]);
+
+      // Raw SQL query for incident counts
+      checkResultRepository.query.mockResolvedValue([
+        { active_incidents: '0', critical_incidents: '0', warning_incidents: '0' },
+      ]);
 
       const result = await service.getStats(mockUserId);
 

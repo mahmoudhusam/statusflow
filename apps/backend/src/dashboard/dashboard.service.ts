@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, In, MoreThanOrEqual } from 'typeorm';
+import { Repository, In } from 'typeorm';
 import { Monitor } from '@/monitor/monitor.entity';
 import { CheckResult } from '@/check-result/check-result.entity';
 import {
@@ -57,16 +57,62 @@ export class DashboardService {
     const monitorIds = monitors.map((m) => m.id);
     const last24Hours = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
-    // Get uptime, response time, and check counts from check results (last 24 hours)
-    const checkStats = await this.checkResultRepository
-      .createQueryBuilder('cr')
-      .select('AVG(CASE WHEN cr.isUp THEN 100 ELSE 0 END)', 'uptime')
-      .addSelect('AVG(cr.responseTime)', 'avgResponseTime')
-      .addSelect('SUM(CASE WHEN cr.isUp THEN 1 ELSE 0 END)', 'successfulChecks')
-      .addSelect('SUM(CASE WHEN cr.isUp THEN 0 ELSE 1 END)', 'failedChecks')
-      .where('cr.monitorId IN (:...monitorIds)', { monitorIds })
-      .andWhere('cr.createdAt >= :last24Hours', { last24Hours })
-      .getRawOne();
+    // Run both queries in PARALLEL to reduce cold start impact
+    const [checkStats, incidentStats] = await Promise.all([
+      // Query 1: Get uptime, response time, and check counts
+      this.checkResultRepository
+        .createQueryBuilder('cr')
+        .select('AVG(CASE WHEN cr.isUp THEN 100 ELSE 0 END)', 'uptime')
+        .addSelect('AVG(cr.responseTime)', 'avgResponseTime')
+        .addSelect('SUM(CASE WHEN cr.isUp THEN 1 ELSE 0 END)', 'successfulChecks')
+        .addSelect('SUM(CASE WHEN cr.isUp THEN 0 ELSE 1 END)', 'failedChecks')
+        .where('cr.monitorId IN (:...monitorIds)', { monitorIds })
+        .andWhere('cr.createdAt >= :last24Hours', { last24Hours })
+        .getRawOne(),
+
+      // Query 2: Get incident counts using a single optimized SQL query
+      this.checkResultRepository.query(
+        `
+        WITH latest_status AS (
+          SELECT DISTINCT ON ("monitorId")
+            "monitorId",
+            "isUp",
+            "createdAt"
+          FROM check_result
+          WHERE "monitorId" = ANY($1)
+          ORDER BY "monitorId", "createdAt" DESC
+        ),
+        down_monitors AS (
+          SELECT "monitorId", "createdAt" as latest_down_at
+          FROM latest_status
+          WHERE "isUp" = false
+        ),
+        incident_start AS (
+          SELECT
+            dm."monitorId",
+            MIN(cr."createdAt") as started_at
+          FROM down_monitors dm
+          JOIN check_result cr ON cr."monitorId" = dm."monitorId"
+          WHERE cr."createdAt" >= $2
+            AND cr."isUp" = false
+            AND NOT EXISTS (
+              SELECT 1 FROM check_result cr2
+              WHERE cr2."monitorId" = cr."monitorId"
+                AND cr2."createdAt" > cr."createdAt"
+                AND cr2."createdAt" <= dm.latest_down_at
+                AND cr2."isUp" = true
+            )
+          GROUP BY dm."monitorId"
+        )
+        SELECT
+          COUNT(*) as active_incidents,
+          SUM(CASE WHEN EXTRACT(EPOCH FROM (NOW() - started_at)) * 1000 >= 300000 THEN 1 ELSE 0 END) as critical_incidents,
+          SUM(CASE WHEN EXTRACT(EPOCH FROM (NOW() - started_at)) * 1000 < 300000 THEN 1 ELSE 0 END) as warning_incidents
+        FROM incident_start
+        `,
+        [monitorIds, last24Hours],
+      ),
+    ]);
 
     const overallUptime = checkStats?.uptime
       ? parseFloat(parseFloat(checkStats.uptime).toFixed(2))
@@ -81,70 +127,13 @@ export class DashboardService {
       ? parseInt(checkStats.failedChecks, 10)
       : 0;
 
-    // Get active incidents by checking which monitors are currently down
-    // A monitor is "currently down" if its most recent check result is isUp = false
-    const latestChecks = await this.checkResultRepository
-      .createQueryBuilder('cr')
-      .select('DISTINCT ON (cr.monitorId) cr.*')
-      .where('cr.monitorId IN (:...monitorIds)', { monitorIds })
-      .orderBy('cr.monitorId', 'ASC')
-      .addOrderBy('cr.createdAt', 'DESC')
-      .getRawMany();
-
-    // Count monitors that are currently down
-    const currentlyDownMonitors = latestChecks.filter((cr) => !cr.isUp);
-    const activeIncidents = currentlyDownMonitors.length;
-
-    // Critical = down for more than 5 minutes (check if first failure was > 5 min ago)
-    const CRITICAL_THRESHOLD_MS = 5 * 60 * 1000;
-    let criticalIncidents = 0;
-    let warningIncidents = 0;
-
-    if (currentlyDownMonitors.length > 0) {
-      // OPTIMIZATION: Batch fetch all recent results for down monitors in ONE query
-      const downMonitorIds = currentlyDownMonitors.map((m) => m.monitorId);
-      const allRecentResults = await this.checkResultRepository.find({
-        where: {
-          monitorId: In(downMonitorIds),
-          createdAt: MoreThanOrEqual(last24Hours),
-        },
-        order: { monitorId: 'ASC', createdAt: 'DESC' },
-      });
-
-      // Group results by monitorId
-      const resultsByMonitor = new Map<string, CheckResult[]>();
-      for (const result of allRecentResults) {
-        const existing = resultsByMonitor.get(result.monitorId) || [];
-        existing.push(result);
-        resultsByMonitor.set(result.monitorId, existing);
-      }
-
-      // Classify each incident
-      for (const downMonitor of currentlyDownMonitors) {
-        const recentResults = resultsByMonitor.get(downMonitor.monitorId) || [];
-
-        // Find when the current downtime started (walk back until we find an 'up')
-        let incidentStart: Date | null = null;
-        for (const result of recentResults) {
-          if (result.isUp) {
-            break;
-          }
-          incidentStart = result.createdAt;
-        }
-
-        if (incidentStart) {
-          const duration = Date.now() - incidentStart.getTime();
-          if (duration >= CRITICAL_THRESHOLD_MS) {
-            criticalIncidents++;
-          } else {
-            warningIncidents++;
-          }
-        } else {
-          // Been down for entire period, count as critical
-          criticalIncidents++;
-        }
-      }
-    }
+    const incidentRow = incidentStats?.[0] || {};
+    const activeIncidents = parseInt(incidentRow.active_incidents || '0', 10);
+    const criticalIncidents = parseInt(
+      incidentRow.critical_incidents || '0',
+      10,
+    );
+    const warningIncidents = parseInt(incidentRow.warning_incidents || '0', 10);
 
     return {
       totalMonitors,
