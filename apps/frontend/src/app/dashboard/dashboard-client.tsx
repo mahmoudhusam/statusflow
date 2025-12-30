@@ -9,13 +9,11 @@ import { QuickActions } from './components/QuickActions';
 import { SystemNotifications } from './components/SystemNotifications';
 import { PerformanceTrends } from './components/PerformanceTrends';
 import { ResponseTimeTrends } from './components/ResponseTimeTrends';
-import { MonitorStatusGrid } from './components/MonitorStatusGrid';
 import { CheckStatusChart } from './components/CheckStatusChart';
 import {
   useDashboardStats,
   useDashboardNotifications,
   usePerformanceTrends,
-  useMonitorStatuses,
   useDashboardIncidents,
 } from '@/hooks/useDashboard';
 import { dashboardKeys } from '@/hooks/useMonitors';
@@ -28,21 +26,18 @@ export function DashboardClient() {
   const statsQuery = useDashboardStats();
   const notificationsQuery = useDashboardNotifications();
   const trendsQuery = usePerformanceTrends(24);
-  const monitorStatusesQuery = useMonitorStatuses();
   const incidentsQuery = useDashboardIncidents('latest');
 
   const isLoading =
     statsQuery.isLoading ||
     notificationsQuery.isLoading ||
     trendsQuery.isLoading ||
-    monitorStatusesQuery.isLoading ||
     incidentsQuery.isLoading;
 
   const error =
     statsQuery.error ||
     notificationsQuery.error ||
     trendsQuery.error ||
-    monitorStatusesQuery.error ||
     incidentsQuery.error;
 
   const handleRetry = () => {
@@ -116,7 +111,6 @@ export function DashboardClient() {
   const stats = statsQuery.data;
   const notifications = notificationsQuery.data;
   const trends = trendsQuery.data ?? [];
-  const monitorStatuses = monitorStatusesQuery.data ?? [];
   const incidents = incidentsQuery.data ?? [];
 
   return (
@@ -245,12 +239,7 @@ export function DashboardClient() {
         {notifications && <SystemNotifications data={notifications} />}
       </div>
 
-      {/* Row 5: Monitor Status - full width */}
-      <div className="mb-6">
-        <MonitorStatusGrid monitors={monitorStatuses} />
-      </div>
-
-      {/* Row 6: Recent Incidents - full width */}
+      {/* Row 5: Recent Incidents - full width */}
       <div>
         <IncidentsList incidents={incidents} />
       </div>
