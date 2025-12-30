@@ -1,14 +1,25 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { formatDistanceToNow } from 'date-fns/formatDistanceToNow';
-import { useDashboardIncidents } from '@/hooks/useDashboard';
-import type { IncidentStatus } from '@/types/dashboard';
+import type { DashboardIncident, IncidentStatus } from '@/types/dashboard';
 
-export function IncidentsList() {
+interface IncidentsListProps {
+  incidents: DashboardIncident[];
+}
+
+export function IncidentsList({ incidents }: IncidentsListProps) {
   const [sortBy, setSortBy] = useState<'latest' | 'oldest'>('latest');
-  const { data: incidents = [], isLoading } = useDashboardIncidents(sortBy);
+
+  // Sort incidents locally instead of refetching
+  const sortedIncidents = useMemo(() => {
+    return [...incidents].sort((a, b) => {
+      const dateA = new Date(a.startedAt).getTime();
+      const dateB = new Date(b.startedAt).getTime();
+      return sortBy === 'latest' ? dateB - dateA : dateA - dateB;
+    });
+  }, [incidents, sortBy]);
 
   const handleSort = (newSort: 'latest' | 'oldest') => {
     setSortBy(newSort);
@@ -48,28 +59,7 @@ export function IncidentsList() {
     return `${seconds}s`;
   };
 
-  if (isLoading) {
-    return (
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">
-          Recent Incidents
-        </h2>
-        <div className="space-y-3">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="animate-pulse flex items-center space-x-4">
-              <div className="h-4 bg-gray-200 rounded w-32" />
-              <div className="h-6 bg-gray-200 rounded-full w-16" />
-              <div className="h-4 bg-gray-200 rounded w-16" />
-              <div className="h-4 bg-gray-200 rounded w-20" />
-              <div className="h-4 bg-gray-200 rounded flex-1" />
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  }
-
-  if (incidents.length === 0) {
+  if (sortedIncidents.length === 0) {
     return (
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
         <h2 className="text-lg font-semibold text-gray-900 mb-4">
@@ -130,7 +120,7 @@ export function IncidentsList() {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
-            {incidents.map((incident) => (
+            {sortedIncidents.map((incident) => (
               <tr
                 key={incident.id}
                 className="hover:bg-gray-50 transition-colors"

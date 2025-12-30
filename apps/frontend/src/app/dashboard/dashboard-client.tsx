@@ -16,6 +16,7 @@ import {
   useDashboardNotifications,
   usePerformanceTrends,
   useMonitorStatuses,
+  useDashboardIncidents,
 } from '@/hooks/useDashboard';
 import { dashboardKeys } from '@/hooks/useMonitors';
 import type { DashboardStats } from '@/types/dashboard';
@@ -23,22 +24,26 @@ import type { DashboardStats } from '@/types/dashboard';
 export function DashboardClient() {
   const queryClient = useQueryClient();
 
+  // Fetch all dashboard data in parallel
   const statsQuery = useDashboardStats();
   const notificationsQuery = useDashboardNotifications();
   const trendsQuery = usePerformanceTrends(24);
   const monitorStatusesQuery = useMonitorStatuses();
+  const incidentsQuery = useDashboardIncidents('latest');
 
   const isLoading =
     statsQuery.isLoading ||
     notificationsQuery.isLoading ||
     trendsQuery.isLoading ||
-    monitorStatusesQuery.isLoading;
+    monitorStatusesQuery.isLoading ||
+    incidentsQuery.isLoading;
 
   const error =
     statsQuery.error ||
     notificationsQuery.error ||
     trendsQuery.error ||
-    monitorStatusesQuery.error;
+    monitorStatusesQuery.error ||
+    incidentsQuery.error;
 
   const handleRetry = () => {
     queryClient.invalidateQueries({ queryKey: dashboardKeys.all });
@@ -112,6 +117,7 @@ export function DashboardClient() {
   const notifications = notificationsQuery.data;
   const trends = trendsQuery.data ?? [];
   const monitorStatuses = monitorStatusesQuery.data ?? [];
+  const incidents = incidentsQuery.data ?? [];
 
   return (
     <div className="container mx-auto px-4 py-6">
@@ -246,7 +252,7 @@ export function DashboardClient() {
 
       {/* Row 6: Recent Incidents - full width */}
       <div>
-        <IncidentsList />
+        <IncidentsList incidents={incidents} />
       </div>
     </div>
   );
