@@ -65,6 +65,7 @@ describe('DashboardService', () => {
 
     checkResultRepository = {
       find: jest.fn(),
+      query: jest.fn(),
       createQueryBuilder: jest.fn().mockReturnValue(createMockQueryBuilder()),
     };
 
@@ -229,12 +230,19 @@ describe('DashboardService', () => {
       ]);
 
       const now = new Date();
-      checkResultRepository.find.mockResolvedValue([
-        // Ordered by createdAt ASC
-        { monitorId: 'monitor-1', isUp: true, createdAt: new Date(now.getTime() - 300000), errorMessage: null },
-        { monitorId: 'monitor-1', isUp: false, createdAt: new Date(now.getTime() - 240000), errorMessage: 'Connection refused' },
-        { monitorId: 'monitor-1', isUp: false, createdAt: new Date(now.getTime() - 180000), errorMessage: 'Timeout' },
-        { monitorId: 'monitor-1', isUp: true, createdAt: new Date(now.getTime() - 120000), errorMessage: null },
+      const startedAt = new Date(now.getTime() - 240000);
+      const resolvedAt = new Date(now.getTime() - 120000);
+
+      // Mock raw SQL query result
+      checkResultRepository.query.mockResolvedValue([
+        {
+          monitorId: 'monitor-1',
+          started_at: startedAt,
+          errorMessage: 'Connection refused',
+          resolved_at: resolvedAt,
+          status: 'resolved',
+          duration: 120000,
+        },
       ]);
 
       const result = await service.getIncidents(mockUserId, 10, 'latest');
@@ -242,7 +250,7 @@ describe('DashboardService', () => {
       expect(result).toHaveLength(1);
       expect(result[0].status).toBe('resolved');
       expect(result[0].monitorName).toBe('Monitor 1');
-      expect(result[0].message).toBe('Connection refused'); // First error message
+      expect(result[0].message).toBe('Connection refused');
     });
 
     it('should mark ongoing incidents as warning or critical based on duration', async () => {
@@ -251,11 +259,18 @@ describe('DashboardService', () => {
       ]);
 
       const now = new Date();
-      // Incident started 2 minutes ago and is still ongoing (warning)
-      checkResultRepository.find.mockResolvedValue([
-        { monitorId: 'monitor-1', isUp: true, createdAt: new Date(now.getTime() - 180000), errorMessage: null },
-        { monitorId: 'monitor-1', isUp: false, createdAt: new Date(now.getTime() - 120000), errorMessage: 'Down' },
-        { monitorId: 'monitor-1', isUp: false, createdAt: new Date(now.getTime() - 60000), errorMessage: 'Still down' },
+      const startedAt = new Date(now.getTime() - 120000); // 2 minutes ago
+
+      // Mock raw SQL query result - ongoing incident (warning)
+      checkResultRepository.query.mockResolvedValue([
+        {
+          monitorId: 'monitor-1',
+          started_at: startedAt,
+          errorMessage: 'Down',
+          resolved_at: null,
+          status: 'warning',
+          duration: 120000,
+        },
       ]);
 
       const result = await service.getIncidents(mockUserId, 10, 'latest');
@@ -280,13 +295,24 @@ describe('DashboardService', () => {
       ]);
 
       const now = new Date();
-      checkResultRepository.find.mockResolvedValue([
-        // Monitor 1: incident at -400000ms
-        { monitorId: 'monitor-1', isUp: false, createdAt: new Date(now.getTime() - 400000), errorMessage: 'Down 1' },
-        { monitorId: 'monitor-1', isUp: true, createdAt: new Date(now.getTime() - 300000), errorMessage: null },
-        // Monitor 2: incident at -200000ms (more recent)
-        { monitorId: 'monitor-2', isUp: false, createdAt: new Date(now.getTime() - 200000), errorMessage: 'Down 2' },
-        { monitorId: 'monitor-2', isUp: true, createdAt: new Date(now.getTime() - 100000), errorMessage: null },
+      // Mock SQL returns already sorted results (DESC for 'latest')
+      checkResultRepository.query.mockResolvedValue([
+        {
+          monitorId: 'monitor-2',
+          started_at: new Date(now.getTime() - 200000),
+          errorMessage: 'Down 2',
+          resolved_at: new Date(now.getTime() - 100000),
+          status: 'resolved',
+          duration: 100000,
+        },
+        {
+          monitorId: 'monitor-1',
+          started_at: new Date(now.getTime() - 400000),
+          errorMessage: 'Down 1',
+          resolved_at: new Date(now.getTime() - 300000),
+          status: 'resolved',
+          duration: 100000,
+        },
       ]);
 
       const result = await service.getIncidents(mockUserId, 10, 'latest');
@@ -302,23 +328,42 @@ describe('DashboardService', () => {
       ]);
 
       const now = new Date();
-      // 5 incidents
-      checkResultRepository.find.mockResolvedValue([
-        { monitorId: 'monitor-1', isUp: false, createdAt: new Date(now.getTime() - 500000), errorMessage: 'Down' },
-        { monitorId: 'monitor-1', isUp: true, createdAt: new Date(now.getTime() - 450000), errorMessage: null },
-        { monitorId: 'monitor-1', isUp: false, createdAt: new Date(now.getTime() - 400000), errorMessage: 'Down' },
-        { monitorId: 'monitor-1', isUp: true, createdAt: new Date(now.getTime() - 350000), errorMessage: null },
-        { monitorId: 'monitor-1', isUp: false, createdAt: new Date(now.getTime() - 300000), errorMessage: 'Down' },
-        { monitorId: 'monitor-1', isUp: true, createdAt: new Date(now.getTime() - 250000), errorMessage: null },
-        { monitorId: 'monitor-1', isUp: false, createdAt: new Date(now.getTime() - 200000), errorMessage: 'Down' },
-        { monitorId: 'monitor-1', isUp: true, createdAt: new Date(now.getTime() - 150000), errorMessage: null },
-        { monitorId: 'monitor-1', isUp: false, createdAt: new Date(now.getTime() - 100000), errorMessage: 'Down' },
-        { monitorId: 'monitor-1', isUp: true, createdAt: new Date(now.getTime() - 50000), errorMessage: null },
+      // Mock SQL returns limited results (3 incidents)
+      checkResultRepository.query.mockResolvedValue([
+        {
+          monitorId: 'monitor-1',
+          started_at: new Date(now.getTime() - 100000),
+          errorMessage: 'Down',
+          resolved_at: new Date(now.getTime() - 50000),
+          status: 'resolved',
+          duration: 50000,
+        },
+        {
+          monitorId: 'monitor-1',
+          started_at: new Date(now.getTime() - 200000),
+          errorMessage: 'Down',
+          resolved_at: new Date(now.getTime() - 150000),
+          status: 'resolved',
+          duration: 50000,
+        },
+        {
+          monitorId: 'monitor-1',
+          started_at: new Date(now.getTime() - 300000),
+          errorMessage: 'Down',
+          resolved_at: new Date(now.getTime() - 250000),
+          status: 'resolved',
+          duration: 50000,
+        },
       ]);
 
       const result = await service.getIncidents(mockUserId, 3, 'latest');
 
       expect(result).toHaveLength(3);
+      // Verify the query was called with the limit parameter
+      expect(checkResultRepository.query).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.arrayContaining([expect.any(Array), expect.any(Date), 3]),
+      );
     });
   });
 
