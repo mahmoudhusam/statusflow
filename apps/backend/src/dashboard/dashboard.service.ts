@@ -177,93 +177,100 @@ export class DashboardService {
 
     const monitorIds = monitors.map((m) => m.id);
     const monitorMap = new Map(monitors.map((m) => [m.id, m.name]));
-
-    // Get check results from the last 24 hours, ordered by monitor and time
-    // OPTIMIZATION: Only select needed columns (skip responseHeaders JSONB)
     const last24Hours = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const sortOrder = sort === 'latest' ? 'DESC' : 'ASC';
 
-    const checkResults = await this.checkResultRepository
-      .createQueryBuilder('cr')
-      .select(['cr.id', 'cr.monitorId', 'cr.isUp', 'cr.createdAt', 'cr.errorMessage'])
-      .where('cr.monitorId IN (:...monitorIds)', { monitorIds })
-      .andWhere('cr.createdAt >= :last24Hours', { last24Hours })
-      .orderBy('cr.monitorId', 'ASC')
-      .addOrderBy('cr.createdAt', 'ASC')
-      .getMany();
+    // Use SQL window functions to detect incidents directly in the database
+    // This avoids fetching thousands of rows and processing in JS
+    const incidents = await this.checkResultRepository.query(
+      `
+      WITH status_changes AS (
+        -- Mark rows where status changed from previous row
+        SELECT
+          cr."monitorId",
+          cr."createdAt",
+          cr."isUp",
+          cr."errorMessage",
+          LAG(cr."isUp") OVER (PARTITION BY cr."monitorId" ORDER BY cr."createdAt") as prev_is_up
+        FROM check_result cr
+        WHERE cr."monitorId" = ANY($1)
+          AND cr."createdAt" >= $2
+      ),
+      incident_boundaries AS (
+        -- Identify incident start points (transition from up/null to down)
+        SELECT
+          "monitorId",
+          "createdAt" as started_at,
+          "errorMessage",
+          ROW_NUMBER() OVER (PARTITION BY "monitorId" ORDER BY "createdAt") as incident_num
+        FROM status_changes
+        WHERE "isUp" = false AND (prev_is_up = true OR prev_is_up IS NULL)
+      ),
+      incident_ends AS (
+        -- Identify incident end points (transition from down to up)
+        SELECT
+          "monitorId",
+          "createdAt" as resolved_at,
+          ROW_NUMBER() OVER (PARTITION BY "monitorId" ORDER BY "createdAt") as resolution_num
+        FROM status_changes
+        WHERE "isUp" = true AND prev_is_up = false
+      ),
+      latest_status AS (
+        -- Get the latest status for each monitor to detect ongoing incidents
+        SELECT DISTINCT ON ("monitorId")
+          "monitorId",
+          "isUp" as latest_is_up,
+          "createdAt" as latest_check
+        FROM check_result
+        WHERE "monitorId" = ANY($1)
+        ORDER BY "monitorId", "createdAt" DESC
+      )
+      SELECT
+        ib."monitorId",
+        ib.started_at,
+        ib."errorMessage",
+        ie.resolved_at,
+        CASE
+          WHEN ie.resolved_at IS NOT NULL THEN 'resolved'
+          WHEN ls.latest_is_up = false AND EXTRACT(EPOCH FROM (NOW() - ib.started_at)) * 1000 >= 300000 THEN 'critical'
+          WHEN ls.latest_is_up = false THEN 'warning'
+          ELSE 'resolved'
+        END as status,
+        CASE
+          WHEN ie.resolved_at IS NOT NULL THEN EXTRACT(EPOCH FROM (ie.resolved_at - ib.started_at)) * 1000
+          ELSE EXTRACT(EPOCH FROM (NOW() - ib.started_at)) * 1000
+        END as duration
+      FROM incident_boundaries ib
+      LEFT JOIN incident_ends ie
+        ON ib."monitorId" = ie."monitorId"
+        AND ie.resolution_num = ib.incident_num
+      LEFT JOIN latest_status ls
+        ON ib."monitorId" = ls."monitorId"
+      ORDER BY ib.started_at ${sortOrder}
+      LIMIT $3
+      `,
+      [monitorIds, last24Hours, limit],
+    );
 
-    // Group results by monitor
-    const resultsByMonitor = new Map<string, typeof checkResults>();
-    for (const result of checkResults) {
-      const existing = resultsByMonitor.get(result.monitorId) || [];
-      existing.push(result);
-      resultsByMonitor.set(result.monitorId, existing);
-    }
-
-    // Detect incidents from consecutive failures
-    const incidents: DashboardIncidentDto[] = [];
-
-    for (const [monitorId, results] of resultsByMonitor) {
-      let incidentStart: Date | null = null;
-      let incidentFirstError: string | null = null;
-
-      for (let i = 0; i < results.length; i++) {
-        const current = results[i];
-        const next = results[i + 1];
-
-        if (!current.isUp && incidentStart === null) {
-          // Start of a new incident
-          incidentStart = current.createdAt;
-          incidentFirstError = current.errorMessage || 'Monitor is down';
-        }
-
-        if (incidentStart !== null) {
-          // Check if incident ends
-          const isResolved = current.isUp;
-          const isLastResult = !next;
-
-          if (isResolved || isLastResult) {
-            const resolvedAt = isResolved ? current.createdAt : null;
-            const endTime = resolvedAt ? resolvedAt.getTime() : Date.now();
-            const duration = endTime - incidentStart.getTime();
-
-            // Determine severity based on duration
-            // Critical if down for more than 5 minutes, warning otherwise
-            const CRITICAL_THRESHOLD_MS = 5 * 60 * 1000;
-            let status: 'critical' | 'warning' | 'resolved';
-            if (isResolved) {
-              status = 'resolved';
-            } else if (duration >= CRITICAL_THRESHOLD_MS) {
-              status = 'critical';
-            } else {
-              status = 'warning';
-            }
-
-            incidents.push({
-              id: `${monitorId}-${incidentStart.getTime()}`,
-              monitorId,
-              monitorName: monitorMap.get(monitorId) || null,
-              status,
-              duration,
-              startedAt: incidentStart,
-              resolvedAt,
-              message: incidentFirstError || 'Monitor was unreachable',
-            });
-
-            incidentStart = null;
-            incidentFirstError = null;
-          }
-        }
-      }
-    }
-
-    // Sort incidents
-    incidents.sort((a, b) => {
-      const timeA = a.startedAt.getTime();
-      const timeB = b.startedAt.getTime();
-      return sort === 'latest' ? timeB - timeA : timeA - timeB;
-    });
-
-    return incidents.slice(0, limit);
+    return incidents.map(
+      (row: {
+        monitorId: string;
+        started_at: Date;
+        errorMessage: string | null;
+        resolved_at: Date | null;
+        status: 'critical' | 'warning' | 'resolved';
+        duration: number;
+      }) => ({
+        id: `${row.monitorId}-${new Date(row.started_at).getTime()}`,
+        monitorId: row.monitorId,
+        monitorName: monitorMap.get(row.monitorId) || null,
+        status: row.status,
+        duration: Math.round(row.duration),
+        startedAt: new Date(row.started_at),
+        resolvedAt: row.resolved_at ? new Date(row.resolved_at) : null,
+        message: row.errorMessage || 'Monitor was unreachable',
+      }),
+    );
   }
 
   async getNotifications(userId: string): Promise<DashboardNotificationsDto> {

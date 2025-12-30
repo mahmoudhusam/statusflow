@@ -3,6 +3,7 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  Index,
   ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
@@ -13,6 +14,7 @@ import { CheckResult } from '@/check-result/check-result.entity';
 import { AlertRule } from '@/alert/entities/alert-rule.entity';
 
 @Entity()
+@Index('IDX_monitor_userId', ['user'])
 export class Monitor {
   @PrimaryGeneratedColumn('uuid')
   id: string;

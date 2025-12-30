@@ -10,6 +10,7 @@ import {
 import { Monitor } from '../monitor/monitor.entity';
 
 @Index(['monitorId', 'createdAt'])
+@Index('IDX_check_result_monitor_created_isUp', ['monitorId', 'createdAt', 'isUp'])
 @Entity()
 export class CheckResult {
   @PrimaryGeneratedColumn('uuid')
