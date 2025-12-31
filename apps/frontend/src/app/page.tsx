@@ -46,12 +46,12 @@ export default function LandingPage() {
               >
                 Pricing
               </a>
-              <a
-                href="#docs"
+              <Link
+                href="/docs"
                 className="text-gray-600 hover:text-gray-900 transition-colors"
               >
                 Docs
-              </a>
+              </Link>
 
               {/* Show different buttons based on authentication status */}
               {isAuthenticated ? (
@@ -140,12 +140,12 @@ export default function LandingPage() {
               >
                 Pricing
               </a>
-              <a
-                href="#docs"
+              <Link
+                href="/docs"
                 className="block text-gray-600 hover:text-gray-900"
               >
                 Docs
-              </a>
+              </Link>
 
               {isAuthenticated ? (
                 <>
@@ -796,7 +796,7 @@ export default function LandingPage() {
                 </li>
               </ul>
               <a
-                href="#docs"
+                href="/docs"
                 className="block w-full py-3 px-4 bg-gray-100 text-gray-900 rounded-lg font-semibold hover:bg-gray-200 transition-colors text-center"
               >
                 View Docs
@@ -824,7 +824,7 @@ export default function LandingPage() {
               Get Started Free
             </a>
             <a
-              href="#docs"
+              href="/docs"
               className="px-8 py-4 bg-blue-500 text-white rounded-lg font-semibold hover:bg-blue-400 transition-colors"
             >
               Read Documentation
@@ -858,7 +858,7 @@ export default function LandingPage() {
                 </li>
                 <li>
                   <a
-                    href="#docs"
+                    href="/docs"
                     className="hover:text-white transition-colors"
                   >
                     Documentation
