@@ -23,21 +23,34 @@ const sections = [
 
 // Code block component with simple syntax highlighting
 function CodeBlock({ code, language = 'json' }: { code: string; language?: string }) {
+  const escapeHtml = (text: string) => {
+    return text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+  };
+
   const highlightCode = (code: string, lang: string) => {
+    // First escape HTML entities to prevent XSS
+    const escaped = escapeHtml(code);
+
     if (lang === 'json') {
-      return code
-        .replace(/"([^"]+)":/g, '<span class="text-purple-600">"$1"</span>:')
-        .replace(/: "([^"]+)"/g, ': <span class="text-green-600">"$1"</span>')
-        .replace(/: (\d+)/g, ': <span class="text-blue-600">$1</span>')
-        .replace(/: (true|false|null)/g, ': <span class="text-orange-600">$1</span>');
+      return escaped
+        .replace(/"([^"]+)":/g, '<span class="text-purple-400">"$1"</span>:')
+        .replace(/: "([^"]+)"/g, ': <span class="text-green-400">"$1"</span>')
+        .replace(/: (\d+)/g, ': <span class="text-blue-400">$1</span>')
+        .replace(/: (true|false|null)/g, ': <span class="text-orange-400">$1</span>');
     }
     if (lang === 'bash') {
-      return code
-        .replace(/^(curl|POST|GET|PATCH|DELETE|PUT)/gm, '<span class="text-green-600">$1</span>')
-        .replace(/(-H|--header|-X|-d|--data)/g, '<span class="text-purple-600">$1</span>')
-        .replace(/"([^"]+)"/g, '<span class="text-yellow-600">"$1"</span>');
+      // Simple bash highlighting - only highlight commands and comments
+      // Avoid highlighting quoted strings as they often contain JSON
+      return escaped
+        .replace(/^(curl)\b/gm, '<span class="text-green-400">$1</span>')
+        .replace(/\s(-X|-H|-d)\s/g, ' <span class="text-cyan-400">$1</span> ')
+        .replace(/(https?:\/\/[^\s\\]+)/g, '<span class="text-yellow-300">$1</span>')
+        .replace(/^(#.*)$/gm, '<span class="text-gray-500">$1</span>');
     }
-    return code;
+    return escaped;
   };
 
   return (
