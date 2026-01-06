@@ -8,20 +8,24 @@ import { ExpressAdapter } from '@bull-board/express';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  // CORS configuration - with fallback to prevent crashes
-  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3001';
-
-  const allowedOrigins = [frontendUrl];
-
-  // Allow both http and https versions
-  if (frontendUrl.startsWith('http://')) {
-    allowedOrigins.push(frontendUrl.replace('http://', 'https://'));
-  } else if (frontendUrl.startsWith('https://')) {
-    allowedOrigins.push(frontendUrl.replace('https://', 'http://'));
-  }
+  // CORS configuration - supports multiple production and development origins
+  const allowedOrigins = [
+    process.env.FRONTEND_URL,
+    'https://statusflow.tech',
+    'https://www.statusflow.tech',
+    'http://localhost:3000', // Development
+    'http://localhost:3001', // Development alternative
+  ].filter(Boolean) as string[];
 
   app.enableCors({
-    origin: allowedOrigins,
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps or curl)
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
     methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true,

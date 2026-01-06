@@ -340,7 +340,7 @@ export default function DocsPage() {
                 API v1.0 - Stable
               </div>
               <div className="text-sm text-gray-500">
-                Base URL: <code className="bg-gray-100 px-2 py-0.5 rounded font-mono">https://api.statusflow.dev</code>
+                Base URL: <code className="bg-gray-100 px-2 py-0.5 rounded font-mono">https://api.statusflow.tech</code>
               </div>
             </div>
             <div className="mt-6 flex flex-wrap gap-3">
@@ -742,7 +742,7 @@ export default function DocsPage() {
                 </div>
 
                 <h3 className="text-lg font-semibold text-gray-900 mb-3">Base URL</h3>
-                <CodeBlock code="https://api.statusflow.dev" language="bash" />
+                <CodeBlock code="https://api.statusflow.tech" language="bash" />
 
                 <h3 className="text-lg font-semibold text-gray-900 mt-6 mb-3">Quick Start</h3>
                 <p className="text-gray-600 mb-4">
@@ -755,7 +755,7 @@ export default function DocsPage() {
                     <p className="text-sm font-medium text-gray-700 mb-2">1. Create an account</p>
                     <CodeBlock
                       language="bash"
-                      code={`curl -X POST https://api.statusflow.dev/auth/signup \\
+                      code={`curl -X POST https://api.statusflow.tech/auth/signup \\
   -H "Content-Type: application/json" \\
   -d '{"email": "you@example.com", "password": "SecurePass123"}'`}
                     />
@@ -765,7 +765,7 @@ export default function DocsPage() {
                     <p className="text-sm font-medium text-gray-700 mb-2">2. Login to get your access token</p>
                     <CodeBlock
                       language="bash"
-                      code={`curl -X POST https://api.statusflow.dev/auth/login \\
+                      code={`curl -X POST https://api.statusflow.tech/auth/login \\
   -H "Content-Type: application/json" \\
   -d '{"email": "you@example.com", "password": "SecurePass123"}'`}
                     />
@@ -775,7 +775,7 @@ export default function DocsPage() {
                     <p className="text-sm font-medium text-gray-700 mb-2">3. Create your first monitor</p>
                     <CodeBlock
                       language="bash"
-                      code={`curl -X POST https://api.statusflow.dev/monitors \\
+                      code={`curl -X POST https://api.statusflow.tech/monitors \\
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \\
   -H "Content-Type: application/json" \\
   -d '{
@@ -791,7 +791,7 @@ export default function DocsPage() {
                     <p className="text-sm font-medium text-gray-700 mb-2">4. Check your monitor status</p>
                     <CodeBlock
                       language="bash"
-                      code={`curl https://api.statusflow.dev/monitors \\
+                      code={`curl https://api.statusflow.tech/monitors \\
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN"`}
                     />
                   </div>
@@ -806,7 +806,7 @@ export default function DocsPage() {
                   <CodeBlock
                     language="bash"
                     code={`# 1. Create a monitor for your API
-curl -X POST https://api.statusflow.dev/monitors \\
+curl -X POST https://api.statusflow.tech/monitors \\
   -H "Authorization: Bearer YOUR_TOKEN" \\
   -H "Content-Type: application/json" \\
   -d '{
@@ -821,7 +821,7 @@ curl -X POST https://api.statusflow.dev/monitors \\
 # Response: { "success": true, "data": { "id": "mon_abc123", ... } }
 
 # 2. Create an alert rule for downtime
-curl -X POST https://api.statusflow.dev/alerts/rules \\
+curl -X POST https://api.statusflow.tech/alerts/rules \\
   -H "Authorization: Bearer YOUR_TOKEN" \\
   -H "Content-Type: application/json" \\
   -d '{
