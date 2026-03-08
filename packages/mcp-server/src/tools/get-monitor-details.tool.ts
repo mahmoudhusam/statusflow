@@ -1,6 +1,7 @@
 import { Tool, ToolParameter } from './tool.interface';
 import { StatusFlowClient } from '../statusflow';
 import type { Monitor } from '../statusflow/types';
+import { formatRelativeTime } from '../utils/format';
 
 export class GetMonitorDetailsTool implements Tool {
   name = 'get_monitor_details';
@@ -19,9 +20,9 @@ export class GetMonitorDetailsTool implements Tool {
 
   async execute(args: Record<string, unknown>): Promise<string> {
     try {
-      const monitorId = String(args.monitor_id);
+      const monitorId = args.monitor_id;
 
-      if (!monitorId) {
+      if (!monitorId || typeof monitorId !== 'string') {
         return 'Error: monitor_id parameter is required';
       }
 
@@ -34,7 +35,7 @@ export class GetMonitorDetailsTool implements Tool {
       const statusEmoji =
         monitor.status === 'up' ? '✓' : monitor.status === 'down' ? '✗' : '⏸';
       const lastChecked = monitor.lastCheckedAt
-        ? this.formatRelativeTime(new Date(monitor.lastCheckedAt))
+        ? formatRelativeTime(new Date(monitor.lastCheckedAt))
         : 'Never checked';
 
       const details = [
@@ -52,15 +53,5 @@ export class GetMonitorDetailsTool implements Tool {
       const message = error instanceof Error ? error.message : 'Unknown error';
       return `Error fetching monitor details: ${message}`;
     }
-  }
-
-  private formatRelativeTime(date: Date): string {
-    const now = new Date();
-    const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-
-    if (seconds < 60) return 'just now';
-    if (seconds < 3600) return `${Math.floor(seconds / 60)} mins ago`;
-    if (seconds < 86400) return `${Math.floor(seconds / 3600)} hours ago`;
-    return `${Math.floor(seconds / 86400)} days ago`;
   }
 }

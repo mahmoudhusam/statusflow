@@ -10,7 +10,7 @@ export class GetDashboardStatsTool implements Tool {
 
   constructor(private readonly client: StatusFlowClient) {}
 
-  async execute(): Promise<string> {
+  async execute(_args: Record<string, unknown>): Promise<string> {
     try {
       const stats = await this.client.getDashboardStats();
 
