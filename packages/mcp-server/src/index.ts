@@ -3,6 +3,7 @@ import { StatusFlowClient } from './statusflow';
 import { createTools } from './tools';
 import { createLLMProvider } from './providers';
 import { Agent } from './agent';
+import { CLI } from './cli';
 
 async function main() {
   const apiUrl = process.env.STATUSFLOW_API_URL;
@@ -20,25 +21,7 @@ async function main() {
   const llm = createLLMProvider();
   const agent = new Agent(llm, tools);
 
-  const queries = [
-    "What's the current status of all my monitors?",
-    'Give me a summary of my system health',
-  ];
-
-  for (const query of queries) {
-    console.log(`\n👤 User: ${query}`);
-    console.log('─'.repeat(50));
-    try {
-      const answer = await agent.run(query);
-      console.log(`🤖 Agent: ${answer}`);
-    } catch (error) {
-      console.error(
-        'Agent error:',
-        error instanceof Error ? error.message : error,
-      );
-    }
-    console.log('─'.repeat(50));
-  }
+  await new CLI(agent).start();
 }
 
-main();
+main().catch(console.error);
