@@ -26,17 +26,16 @@ async function main() {
     console.log(`    → ${t.description}\n`);
   });
 
-  // Execute list_monitors as a smoke test
-  console.log('🧪 Smoke Test: Executing list_monitors...\n');
-  try {
-    const result = await tools[0].execute({});
-    console.log(result);
-  } catch (error) {
-    console.error(
-      'Test failed:',
-      error instanceof Error ? error.message : error,
-    );
-  }
+  // Smoke test: list_monitors
+  console.log('🧪 Smoke Test: list_monitors\n');
+  const listResult = await tools[0].execute({});
+  console.log(listResult);
+
+  // Smoke test: get_recent_incidents
+  console.log('\n🧪 Smoke Test: get_recent_incidents\n');
+  const incidentTool = tools.find((t) => t.name === 'get_recent_incidents')!;
+  const incidentResult = await incidentTool.execute({ limit: 3 });
+  console.log(incidentResult);
 }
 
 main();
