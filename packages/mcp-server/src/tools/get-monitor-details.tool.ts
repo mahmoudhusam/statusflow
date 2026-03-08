@@ -1,6 +1,5 @@
 import { Tool, ToolParameter } from './tool.interface';
 import { StatusFlowClient } from '../statusflow';
-import type { Monitor } from '../statusflow/types';
 import { formatRelativeTime } from '../utils/format';
 
 export class GetMonitorDetailsTool implements Tool {

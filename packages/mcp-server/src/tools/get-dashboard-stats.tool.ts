@@ -1,6 +1,5 @@
 import { Tool, ToolParameter } from './tool.interface';
 import { StatusFlowClient } from '../statusflow';
-import type { DashboardStats } from '../statusflow/types';
 
 export class GetDashboardStatsTool implements Tool {
   name = 'get_dashboard_stats';

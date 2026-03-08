@@ -1,6 +1,8 @@
 import 'dotenv/config';
 import { StatusFlowClient } from './statusflow';
 import { createTools } from './tools';
+import { createLLMProvider } from './providers';
+import { Agent } from './agent';
 
 async function main() {
   const apiUrl = process.env.STATUSFLOW_API_URL;
@@ -15,27 +17,28 @@ async function main() {
 
   const client = new StatusFlowClient(apiUrl, apiKey);
   const tools = createTools(client);
+  const llm = createLLMProvider();
+  const agent = new Agent(llm, tools);
 
-  // Print available tools
-  console.log('\n📋 Available Tools:\n');
-  tools.forEach((t) => {
-    const params = t.parameters.length
-      ? ` (${t.parameters.map((p) => p.name).join(', ')})`
-      : '';
-    console.log(`  ✓ ${t.name}${params}`);
-    console.log(`    → ${t.description}\n`);
-  });
+  const queries = [
+    "What's the current status of all my monitors?",
+    'Give me a summary of my system health',
+  ];
 
-  // Smoke test: list_monitors
-  console.log('🧪 Smoke Test: list_monitors\n');
-  const listResult = await tools[0].execute({});
-  console.log(listResult);
-
-  // Smoke test: get_recent_incidents
-  console.log('\n🧪 Smoke Test: get_recent_incidents\n');
-  const incidentTool = tools.find((t) => t.name === 'get_recent_incidents')!;
-  const incidentResult = await incidentTool.execute({ limit: 3 });
-  console.log(incidentResult);
+  for (const query of queries) {
+    console.log(`\n👤 User: ${query}`);
+    console.log('─'.repeat(50));
+    try {
+      const answer = await agent.run(query);
+      console.log(`🤖 Agent: ${answer}`);
+    } catch (error) {
+      console.error(
+        'Agent error:',
+        error instanceof Error ? error.message : error,
+      );
+    }
+    console.log('─'.repeat(50));
+  }
 }
 
 main();
