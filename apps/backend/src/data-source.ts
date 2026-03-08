@@ -28,9 +28,10 @@ export const AppDataSource = new DataSource({
   ],
   migrations: [__dirname + '/migrations/*{.ts,.js}'],
   migrationsRun: false,
-  ssl: {
-    rejectUnauthorized: false,
-  },
+  ssl:
+    process.env.NODE_ENV === 'production'
+      ? { rejectUnauthorized: false }
+      : false,
   extra: {
     max: 10,
     min: 2,

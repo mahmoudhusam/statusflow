@@ -35,9 +35,10 @@ import { DashboardModule } from '@/dashboard/dashboard.module';
         synchronize: false, // Keep this as false for migrations
         migrations: [__dirname + '/migrations/*{.ts,.js}'],
         migrationsRun: false,
-        ssl: {
-          rejectUnauthorized: false,
-        },
+        ssl:
+          config.get<string>('NODE_ENV') === 'production'
+            ? { rejectUnauthorized: false }
+            : false,
         extra: {
           max: 10,
           min: 2,
