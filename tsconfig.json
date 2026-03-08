@@ -8,7 +8,8 @@
   "references": [
     { "path": "apps/backend" },
     { "path": "apps/frontend" },
-    { "path": "packages/types" }
+    { "path": "packages/types" },
+    { "path": "packages/mcp-server" }
   ],
   "exclude": ["node_modules"]
 }
