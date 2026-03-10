@@ -10,5 +10,6 @@ import { DashboardController } from '@/dashboard/dashboard.controller';
   imports: [TypeOrmModule.forFeature([Monitor, CheckResult, AlertHistory])],
   providers: [DashboardService],
   controllers: [DashboardController],
+  exports: [DashboardService],
 })
 export class DashboardModule {}

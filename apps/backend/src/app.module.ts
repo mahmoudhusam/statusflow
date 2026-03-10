@@ -12,6 +12,8 @@ import { AlertModule } from '@/alert/alert.module';
 import { QueueModule } from '@/queue/queue.module';
 import { ReportsModule } from '@/reports/reports.module';
 import { DashboardModule } from '@/dashboard/dashboard.module';
+import { AiService } from './ai/ai.service';
+import { AiModule } from './ai/ai.module';
 
 @Module({
   imports: [
@@ -56,8 +58,9 @@ import { DashboardModule } from '@/dashboard/dashboard.module';
     QueueModule,
     ReportsModule,
     DashboardModule,
+    AiModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, AiService],
 })
 export class AppModule {}
